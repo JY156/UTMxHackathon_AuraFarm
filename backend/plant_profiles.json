@@ -1,0 +1,19 @@
+{
+    "lettuce": {
+        "name": "Lettuce (Romaine)",
+        "ideal_conditions": {
+        "temperature_c": {"min": 18.0, "max": 24.0, "optimal": 21.0},
+        "humidity_pct": {"min": 50.0, "max": 70.0, "optimal": 60.0},
+        "ph_level": {"min": 6.0, "max": 6.5, "optimal": 6.2},
+        "ec_us_cm": {"min": 800.0, "max": 1200.0, "optimal": 1000.0},
+        "light_lux": {"min": 12000.0, "max": 20000.0, "optimal": 16000.0},
+        "moisture_pct": {"min": 40.0, "max": 60.0, "optimal": 50.0}
+        },
+        "growth_cycle_days": 45,
+        "nutrient_requirements": {
+        "nitrogen_ppm": 150,
+        "phosphorus_ppm": 40,
+        "potassium_ppm": 200
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "timestamp": "2026-05-05T10:46:36.472310Z",
+    "message_type": "state_update",
+    "farm_telemetry": {
+        "sensors": {
+        "temperature_c": 24.3,
+        "humidity_pct": 65.2,
+        "moisture_pct": 48.1,
+        "ph_level": 6.18,
+        "ec_us_cm": 842,
+        "light_lux": 14890
+        },
+        "actuators": {
+        "cooling_fan": "off",
+        "exhaust_fan": "on",
+        "water_pump": "on",
+        "led_intensity_pct": 80
+        }
+    },
+    "red_dot_alerts": [],
+    "ai_agronomist": null,
+    "impact_metrics": {
+        "water_saved_liters": 12.4,
+        "energy_saved_kwh": 0.88,
+        "cost_saved_my_r": 15.77
+    }
+}
