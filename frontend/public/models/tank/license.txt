@@ -1,0 +1,11 @@
+Model Information:
+* title:	Plastic Water Tank
+* source:	https://sketchfab.com/3d-models/plastic-water-tank-b4de261f3ad94b1c8d91070fbdca3d08
+* author:	Akshat (https://sketchfab.com/shooter24994)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Plastic Water Tank" (https://sketchfab.com/3d-models/plastic-water-tank-b4de261f3ad94b1c8d91070fbdca3d08) by Akshat (https://sketchfab.com/shooter24994) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

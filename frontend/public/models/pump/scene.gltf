@@ -1,0 +1,785 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 4042,
+      "max": [
+        82.0,
+        26.964508056640625,
+        49.25
+      ],
+      "min": [
+        -35.51311111450195,
+        -34.0,
+        -49.25
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 48504,
+      "componentType": 5126,
+      "count": 4042,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 4042,
+      "max": [
+        79.0,
+        266.05078125
+      ],
+      "min": [
+        -32.46354293823242,
+        -49.249996185302734
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 12774,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 97008,
+      "componentType": 5126,
+      "count": 1544,
+      "max": [
+        -3.0,
+        18.0,
+        36.75
+      ],
+      "min": [
+        -47.0,
+        -18.0,
+        -36.75
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 115536,
+      "componentType": 5126,
+      "count": 1544,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 32336,
+      "componentType": 5126,
+      "count": 1544,
+      "max": [
+        40.0,
+        73.5
+      ],
+      "min": [
+        -36.75,
+        -29.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 51096,
+      "componentType": 5125,
+      "count": 4344,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 134064,
+      "componentType": 5126,
+      "count": 1330,
+      "max": [
+        -64.0,
+        17.0,
+        22.999601364135742
+      ],
+      "min": [
+        -77.0,
+        -17.0,
+        -22.999601364135742
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 150024,
+      "componentType": 5126,
+      "count": 1330,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 44688,
+      "componentType": 5126,
+      "count": 1330,
+      "max": [
+        36.0,
+        132.89476013183594
+      ],
+      "min": [
+        -34.0,
+        -17.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 68472,
+      "componentType": 5125,
+      "count": 4740,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 165984,
+      "componentType": 5126,
+      "count": 488,
+      "max": [
+        -47.0,
+        17.0,
+        22.963544845581055
+      ],
+      "min": [
+        -64.0,
+        -17.0,
+        -22.963544845581055
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 171840,
+      "componentType": 5126,
+      "count": 488,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 55328,
+      "componentType": 5126,
+      "count": 488,
+      "max": [
+        32.96354293823242,
+        41.0
+      ],
+      "min": [
+        -22.96354103088379,
+        7.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 87432,
+      "componentType": 5125,
+      "count": 1296,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 177696,
+      "componentType": 5126,
+      "count": 1614,
+      "max": [
+        -3.0,
+        27.5,
+        20.0
+      ],
+      "min": [
+        -44.0,
+        18.0,
+        -20.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 197064,
+      "componentType": 5126,
+      "count": 1614,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 59232,
+      "componentType": 5126,
+      "count": 1614,
+      "max": [
+        40.0,
+        154.86526489257813
+      ],
+      "min": [
+        -20.0,
+        -44.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 92616,
+      "componentType": 5125,
+      "count": 5064,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 216432,
+      "componentType": 5126,
+      "count": 1618,
+      "max": [
+        -3.0,
+        -18.0,
+        20.0
+      ],
+      "min": [
+        -44.0,
+        -27.5,
+        -20.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 235848,
+      "componentType": 5126,
+      "count": 1618,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 72144,
+      "componentType": 5126,
+      "count": 1618,
+      "max": [
+        40.0,
+        161.5652313232422
+      ],
+      "min": [
+        -20.0,
+        -44.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 112872,
+      "componentType": 5125,
+      "count": 5064,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "umcosta79 (https://sketchfab.com/umcosta79)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/water-pump-1gpm-1544dfaf46ea474483a65653b455a592",
+      "title": "Water Pump 1GPM"
+    },
+    "generator": "Sketchfab-15.75.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 133128,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 85088,
+      "byteOffset": 133128,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 255264,
+      "byteOffset": 218216,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 473480,
+      "uri": "scene.bin"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Paint_Matte_Black_2",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.04,
+          0.04,
+          0.04,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9577051494623774
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Paint_Matte_Orange_1",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.902495,
+          0.329427,
+          0.00225964,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9577051494623774
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Paint_Matte_Orange_1_0",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.902495,
+          0.329427,
+          0.00225964,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9577051494623774
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Paint_Matte_Orange_1_1",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.902495,
+          0.329427,
+          0.00225964,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9577051494623774
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Paint_Matte_Orange_1_2",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.902495,
+          0.329427,
+          0.00225964,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9577051494623774
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Paint_Matte_Orange_1_3",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.902495,
+          0.329427,
+          0.00225964,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9577051494623774
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "MOTOR_Paint Matte Black #2_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "PUMP_Paint Matte Orange #1_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 5,
+            "POSITION": 4,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "PRESSURE_CAP_Paint Matte Orange #1_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 9,
+            "POSITION": 8,
+            "TEXCOORD_0": 10
+          },
+          "indices": 11,
+          "material": 2,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "PRESSURE_BODY_Paint Matte Orange #1_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 13,
+            "POSITION": 12,
+            "TEXCOORD_0": 14
+          },
+          "indices": 15,
+          "material": 3,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "PUMP_CAP1_Paint Matte Orange #1_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 17,
+            "POSITION": 16,
+            "TEXCOORD_0": 18
+          },
+          "indices": 19,
+          "material": 4,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "PUMP_CAP2_Paint Matte Orange #1_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 21,
+            "POSITION": 20,
+            "TEXCOORD_0": 22
+          },
+          "indices": 23,
+          "material": 5,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        0.0010000000474974513,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0010000000474974513,
+        0.0,
+        0.0,
+        -0.0010000000474974513,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "4c3af2ca340547768705eb5d8971d9e0.fbx"
+    },
+    {
+      "children": [
+        3,
+        5
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4
+      ],
+      "matrix": [
+        0.6012831528361351,
+        -0.5805179071913457,
+        -0.5490514816896657,
+        0.0,
+        0.4286850916468602,
+        0.8142474804567401,
+        -0.3914462067380059,
+        0.0,
+        0.6743053183203882,
+        -1.7539380489650647e-07,
+        0.7384526644848735,
+        0.0,
+        -300.2745056152344,
+        319.08251953125,
+        280.9995422363281,
+        1.0
+      ],
+      "name": "Active Camera"
+    },
+    {
+      "name": "Object_4"
+    },
+    {
+      "children": [
+        6
+      ],
+      "name": "lux_root"
+    },
+    {
+      "children": [
+        7
+      ],
+      "name": "Default"
+    },
+    {
+      "children": [
+        8,
+        11,
+        14,
+        17,
+        20,
+        23
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        -2.5,
+        34.0,
+        0.0,
+        1.0
+      ],
+      "name": "waterpump_1gpm"
+    },
+    {
+      "children": [
+        9
+      ],
+      "name": "MOTOR"
+    },
+    {
+      "children": [
+        10
+      ],
+      "name": "MOTOR"
+    },
+    {
+      "mesh": 0,
+      "name": "MOTOR_Paint Matte Black #2_0"
+    },
+    {
+      "children": [
+        12
+      ],
+      "name": "PUMP"
+    },
+    {
+      "children": [
+        13
+      ],
+      "name": "PUMP"
+    },
+    {
+      "mesh": 1,
+      "name": "PUMP_Paint Matte Orange #1_0"
+    },
+    {
+      "children": [
+        15
+      ],
+      "name": "PRESSURE_CAP"
+    },
+    {
+      "children": [
+        16
+      ],
+      "name": "PRESSURE_CAP"
+    },
+    {
+      "mesh": 2,
+      "name": "PRESSURE_CAP_Paint Matte Orange #1_0"
+    },
+    {
+      "children": [
+        18
+      ],
+      "name": "PRESSURE_BODY"
+    },
+    {
+      "children": [
+        19
+      ],
+      "name": "PRESSURE_BODY"
+    },
+    {
+      "mesh": 3,
+      "name": "PRESSURE_BODY_Paint Matte Orange #1_0"
+    },
+    {
+      "children": [
+        21
+      ],
+      "name": "PUMP_CAP1"
+    },
+    {
+      "children": [
+        22
+      ],
+      "name": "PUMP_CAP1"
+    },
+    {
+      "mesh": 4,
+      "name": "PUMP_CAP1_Paint Matte Orange #1_0"
+    },
+    {
+      "children": [
+        24
+      ],
+      "name": "PUMP_CAP2"
+    },
+    {
+      "children": [
+        25
+      ],
+      "name": "PUMP_CAP2"
+    },
+    {
+      "mesh": 5,
+      "name": "PUMP_CAP2_Paint Matte Orange #1_0"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

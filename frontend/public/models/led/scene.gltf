@@ -1,0 +1,326 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 86,
+      "max": [
+        0.9749279022216797,
+        1.0,
+        1.0102077722549438
+      ],
+      "min": [
+        -0.9749279022216797,
+        -0.9009688496589661,
+        -1.0102077722549438
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 1032,
+      "componentType": 5126,
+      "count": 86,
+      "max": [
+        0.7639712691307068,
+        0.7836182713508606,
+        0.6212427616119385
+      ],
+      "min": [
+        -0.7639712691307068,
+        -0.7060156464576721,
+        -0.6212427616119385
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 86,
+      "max": [
+        1.0,
+        1.0
+      ],
+      "min": [
+        2.9802322387695313e-08,
+        0.0
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 216,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 2064,
+      "componentType": 5126,
+      "count": 30,
+      "max": [
+        1.1276658773422241,
+        1.1566659212112427,
+        0.9389014840126038
+      ],
+      "min": [
+        -1.1276658773422241,
+        -1.0421199798583984,
+        -0.9389014840126038
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 2424,
+      "componentType": 5126,
+      "count": 30,
+      "max": [
+        0.7639713883399963,
+        0.7836182713508606,
+        0.6212427020072937
+      ],
+      "min": [
+        -0.7639713883399963,
+        -0.7060156464576721,
+        -0.6212427020072937
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 688,
+      "componentType": 5126,
+      "count": 30,
+      "max": [
+        1.0,
+        1.0
+      ],
+      "min": [
+        2.9802322387695313e-08,
+        0.03376747667789459
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 864,
+      "componentType": 5125,
+      "count": 72,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "artsx (https://sketchfab.com/artsxnotxx)",
+      "license": "SKETCHFAB Standard (https://sketchfab.com/licenses)",
+      "source": "https://sketchfab.com/3d-models/led-bar-dc108ebeff934fea8784e80b908b501e",
+      "title": "LED Bar"
+    },
+    "generator": "Sketchfab-16.95.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 1152,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 928,
+      "byteOffset": 1152,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 2784,
+      "byteOffset": 2080,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 4864,
+      "uri": "scene.bin"
+    }
+  ],
+  "extensionsUsed": [
+    "KHR_materials_emissive_strength"
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "M_LightBar_Dark",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.0132857,
+          0.0132857,
+          0.0132857,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9970292271671332
+      }
+    },
+    {
+      "doubleSided": true,
+      "emissiveFactor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "extensions": {
+        "KHR_materials_emissive_strength": {
+          "emissiveStrength": 10.0
+        }
+      },
+      "name": "M_LightBar_Emissive",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.8,
+          0.8,
+          0.8,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.8211145618000169
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.001_M_LightBar_Dark_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Cylinder.001_M_LightBar_Emissive_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 5,
+            "POSITION": 4,
+            "TEXCOORD_0": 6
+          },
+          "indices": 7,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.009999999776482582,
+        0.0,
+        0.0,
+        -0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "LedBar.fbx"
+    },
+    {
+      "children": [
+        3
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4,
+        5
+      ],
+      "matrix": [
+        17.256935119628906,
+        3.831809797642168e-15,
+        -3.8318097976421676e-15,
+        0.0,
+        3.8318103762293066e-15,
+        -17.256935119628714,
+        2.6057247083678958e-06,
+        0.0,
+        -1.8607456563489938e-13,
+        -0.0001265352906565803,
+        -838.0053710937407,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Cylinder.001"
+    },
+    {
+      "mesh": 0,
+      "name": "Cylinder.001_M_LightBar_Dark_0"
+    },
+    {
+      "mesh": 1,
+      "name": "Cylinder.001_M_LightBar_Emissive_0"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
