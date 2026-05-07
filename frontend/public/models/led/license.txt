@@ -1,0 +1,8 @@
+Model Information:
+* title:	LED Bar
+* source:	https://sketchfab.com/3d-models/led-bar-dc108ebeff934fea8784e80b908b501e
+* author:	artsx (https://sketchfab.com/artsxnotxx)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

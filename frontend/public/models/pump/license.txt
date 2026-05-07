@@ -1,0 +1,11 @@
+Model Information:
+* title:	Water Pump 1GPM
+* source:	https://sketchfab.com/3d-models/water-pump-1gpm-1544dfaf46ea474483a65653b455a592
+* author:	umcosta79 (https://sketchfab.com/umcosta79)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Water Pump 1GPM" (https://sketchfab.com/3d-models/water-pump-1gpm-1544dfaf46ea474483a65653b455a592) by umcosta79 (https://sketchfab.com/umcosta79) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
