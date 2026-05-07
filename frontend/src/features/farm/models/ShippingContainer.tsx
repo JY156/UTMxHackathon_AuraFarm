@@ -1,6 +1,9 @@
 import { Geometry, Base, Subtraction } from '@react-three/csg'
+import { useFarmStore } from '../../../store/useFarmStore'
 
 export function ShippingContainer() {
+  const inspectedId = useFarmStore(state => state.inspectedId)
+  const hideRightWall = inspectedId?.includes('rack')
   return (
     <group>
       {/* Floor */}
@@ -34,7 +37,7 @@ export function ShippingContainer() {
       </mesh>
 
       {/* Right Wall */}
-      <mesh position={[3.7, 2.5, 2.8]} receiveShadow>
+      <mesh position={[3.7, 2.5, 2.8]} receiveShadow visible={!hideRightWall}>
         {/* args: [thickness, height, depth] */}
         {/* Depth matches the floor (12), height matches the back wall (5) */}
         <boxGeometry args={[0.2, 5, 12]} />

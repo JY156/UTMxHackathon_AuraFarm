@@ -64,7 +64,7 @@ export interface FarmUpdatePayload {
   impact?: Partial<FarmImpact>
 }
 
-interface FarmState {
+export interface FarmState {
   sensors: FarmSensors
   actuators: FarmActuators
   autoMode: boolean
@@ -74,6 +74,7 @@ interface FarmState {
   history: FarmHistoryPoint[]
   impact: FarmImpact
   aiRec: AIRecommendation
+  inspectedId: string | null
   updateData: (data: FarmUpdatePayload) => void
   toggleActuator: (actuator: 'fan' | 'pump' | 'mist') => void
   setLedMode: (mode: LedMode) => void
@@ -82,6 +83,7 @@ interface FarmState {
   resolveAlert: (id: string) => void
   loadProfile: (profile: FarmProfile) => void
   fetchAI: () => Promise<void>
+  setInspectedId: (id: string | null) => void
 }
 
 const createId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
@@ -103,6 +105,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
     context: '',
     triggeredBy: 'scheduled',
   },
+  inspectedId: null,
   updateData: (data) =>
     set((state) => {
       const nextImpact = {
@@ -195,4 +198,5 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       })
     }, 1500)
   },
+  setInspectedId: (id) => set({ inspectedId: id }),
 }))
