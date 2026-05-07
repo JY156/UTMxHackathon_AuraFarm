@@ -44,6 +44,8 @@ function DemoController() {
       type: 'demo_spike',
       message: 'Demo spike injected. Sensors are intentionally out of band.',
       actionRequired: true,
+      rackId: 2, // Highlight rack 2 for demo purposes
+      shelf: 1,
     })
   }
 

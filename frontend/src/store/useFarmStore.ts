@@ -195,4 +195,4 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       })
     }, 1500)
   },
-}))
+}))
