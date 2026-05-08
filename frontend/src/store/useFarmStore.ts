@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 
 export type Severity = 'info' | 'warning' | 'critical'
-export type Actuator = 'fan' | 'pump' | 'led'
-export type LedMode = 'full' | 'blue' | 'red' | 'off'
+export type Actuator = 'fan' | 'pump' | 'mist' | 'led'
+export type LedMode = 'full' | 'purple' | 'off'
 
 export interface Alert {
   id: string
@@ -24,6 +24,7 @@ export interface FarmSensors {
 export interface FarmActuators {
   fan: boolean
   pump: boolean
+  mist: boolean
   led: LedMode
 }
 
@@ -66,6 +67,7 @@ export interface FarmUpdatePayload {
 interface FarmState {
   sensors: FarmSensors
   actuators: FarmActuators
+  autoMode: boolean
   automationLog: string[]
   alerts: Alert[]
   profile: FarmProfile | null
@@ -73,6 +75,9 @@ interface FarmState {
   impact: FarmImpact
   aiRec: AIRecommendation
   updateData: (data: FarmUpdatePayload) => void
+  toggleActuator: (actuator: 'fan' | 'pump' | 'mist') => void
+  setLedMode: (mode: LedMode) => void
+  toggleAutoMode: () => void
   addAlert: (alert: Omit<Alert, 'id' | 'resolved' | 'timestamp'>) => void
   resolveAlert: (id: string) => void
   loadProfile: (profile: FarmProfile) => void
@@ -83,7 +88,8 @@ const createId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toStri
 
 export const useFarmStore = create<FarmState>((set, get) => ({
   sensors: { temp: 22, humidity: 65, moisture: 50, ph: 6.0 },
-  actuators: { fan: false, pump: false, led: 'full' },
+  actuators: { fan: false, pump: false, mist: false, led: 'full' },
+  autoMode: true,
   automationLog: [],
   alerts: [],
   profile: null,
@@ -132,6 +138,28 @@ export const useFarmStore = create<FarmState>((set, get) => ({
         ].slice(-30),
       }
     }),
+  toggleActuator: (actuator) =>
+    set((state) => {
+      const newVal = !state.actuators[actuator]
+      return {
+        actuators: { ...state.actuators, [actuator]: newVal },
+        autoMode: false,
+        automationLog: [
+          ...state.automationLog,
+          `⚡ Manual override: ${actuator.toUpperCase()} turned ${newVal ? 'ON' : 'OFF'}`
+        ].slice(-5)
+      }
+    }),
+  setLedMode: (mode) =>
+    set((state) => ({
+      actuators: { ...state.actuators, led: mode },
+      autoMode: false,
+      automationLog: [
+        ...state.automationLog,
+        `💡 LED mode adjusted: ${mode.toUpperCase()}`
+      ].slice(-5)
+    })),
+  toggleAutoMode: () => set((state) => ({ autoMode: !state.autoMode })),
   addAlert: (alert) =>
     set((state) => ({
       alerts: [
@@ -167,4 +195,4 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       })
     }, 1500)
   },
-}))
+}))

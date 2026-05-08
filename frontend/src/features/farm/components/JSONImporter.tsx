@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { FileUp } from 'lucide-react'
+import { FileUp, Leaf, Info, Sparkles, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useFarmStore, type FarmProfile } from '../../../store/useFarmStore'
 
 const CROP_TEMPLATES: Record<string, FarmProfile> = {
@@ -35,83 +36,115 @@ const CROP_TEMPLATES: Record<string, FarmProfile> = {
 function JSONImporter() {
   const loadProfile = useFarmStore((state) => state.loadProfile)
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [message, setMessage] = useState('Drop a profile JSON file or select a preset below.')
+  const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
+    type: 'idle',
+    message: 'Drop configuration JSON or select a template.',
+  })
   const [dragging, setDragging] = useState(false)
 
   const importFile = async (file: File) => {
-    const text = await file.text()
-    const parsed = JSON.parse(text) as Partial<FarmProfile> & { profile?: Partial<FarmProfile> }
-    const profile = parsed.profile ?? parsed
+    try {
+      const text = await file.text()
+      const parsed = JSON.parse(text) as Partial<FarmProfile> & { profile?: Partial<FarmProfile> }
+      const profile = parsed.profile ?? parsed
 
-    if (!profile || typeof profile.name !== 'string' || typeof profile.optimal !== 'object') {
-      throw new Error('Invalid profile schema')
+      if (!profile || typeof profile.name !== 'string' || typeof profile.optimal !== 'object') {
+        throw new Error('Invalid profile schema')
+      }
+
+      loadProfile(profile as FarmProfile)
+      setStatus({ type: 'success', message: `Profile "${profile.name}" deployed successfully.` })
+    } catch (err) {
+      setStatus({ type: 'error', message: 'Invalid profile schema. Check JSON structure.' })
     }
-
-    loadProfile(profile as FarmProfile)
-    setMessage(`✓ Loaded ${profile.name} successfully.`)
   }
 
   const loadTemplate = (template: FarmProfile) => {
     loadProfile(template)
-    setMessage(`✓ Loaded ${template.name} profile.`)
+    setStatus({ type: 'success', message: `${template.name} preset loaded.` })
   }
 
   return (
-    <section
-      className={`rounded-[28px] border border-dashed p-4 backdrop-blur-xl transition ${
-        dragging ? 'border-cyan-300 bg-cyan-500/10' : 'border-white/15 bg-white/5'
-      }`}
-      onDragOver={(event) => {
-        event.preventDefault()
-        setDragging(true)
-      }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={async (event) => {
-        event.preventDefault()
-        setDragging(false)
-
-        const file = event.dataTransfer.files[0]
-        if (!file) {
-          return
-        }
-
-        try {
-          await importFile(file)
-        } catch {
-          setMessage('Invalid profile file.')
-        }
-      }}
-    >
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Crop Profiles</p>
-          <h2 className="text-lg font-semibold text-white">Load a preset or upload custom</h2>
+    <section className="flex flex-col gap-6">
+      <header className="flex items-center justify-between px-2">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Crop Orchestration</h3>
+          <p className="text-xs text-slate-500 flex items-center gap-2">
+            <Leaf size={12} className="text-emerald-400" /> Active configuration layer
+          </p>
         </div>
-        <button
-          type="button"
-          className="border border-white/30 rounded-lg bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 transition hover:border-white/50 hover:bg-white/10 flex items-center gap-2"
-          onClick={() => inputRef.current?.click()}
-        >
-          <FileUp size={16} />
-          Upload
-        </button>
-      </div>
+      </header>
 
-      <p className="mb-4 text-sm text-slate-300">{message}</p>
+      {/* Upload Zone */}
+      <motion.div
+        className={`relative flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed p-8 transition-all duration-300 ${
+          dragging 
+            ? 'border-emerald-500 bg-emerald-500/10 scale-[1.02]' 
+            : 'border-white/5 bg-white/5 hover:border-white/10 hover:bg-white/10'
+        }`}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={async (e) => {
+          e.preventDefault()
+          setDragging(false)
+          const file = e.dataTransfer.files[0]
+          if (file) await importFile(file)
+        }}
+        onClick={() => inputRef.current?.click()}
+      >
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-slate-400 group-hover:text-white transition-colors">
+          <UploadCloud size={32} />
+        </div>
+        <div className="mt-4 text-center">
+          <p className="text-sm font-bold text-white">Upload Custom Profile</p>
+          <p className="mt-1 text-xs text-slate-500">Drag & drop .json files here</p>
+        </div>
+        
+        <AnimatePresence mode="wait">
+          {status.type !== 'idle' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className={`mt-4 flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest ${
+                status.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+              }`}
+            >
+              {status.type === 'success' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+              {status.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
 
-      {/* Quick-load templates */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {Object.entries(CROP_TEMPLATES).map(([key, template]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => loadTemplate(template)}
-            className="border border-emerald-400/30 rounded-lg bg-emerald-500/10 px-3 py-3 text-sm font-medium text-emerald-200 transition hover:border-emerald-400/50 hover:bg-emerald-500/15"
-            title={`Load ${template.name} profile`}
-          >
-            {template.name}
-          </button>
-        ))}
+      {/* Preset Templates */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2 px-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <Sparkles size={12} className="text-cyan-400" /> Optimized Presets
+        </div>
+        
+        <div className="grid grid-cols-1 gap-3">
+          {Object.entries(CROP_TEMPLATES).map(([key, template]) => (
+            <button
+              key={key}
+              onClick={() => loadTemplate(template)}
+              className="group relative flex items-center justify-between overflow-hidden rounded-2xl border border-white/5 bg-white/5 p-4 transition-all hover:bg-white/10"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all">
+                  <Leaf size={18} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white">{template.name}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest">Optimized for Vertical Growth</p>
+                </div>
+              </div>
+              <div className="rounded-lg bg-white/5 p-2 text-slate-500 group-hover:text-white transition-colors">
+                <Info size={16} />
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       <input
@@ -119,19 +152,10 @@ function JSONImporter() {
         type="file"
         accept="application/json"
         className="hidden"
-        onChange={async (event) => {
-          const file = event.target.files?.[0]
-          if (!file) {
-            return
-          }
-
-          try {
-            await importFile(file)
-          } catch {
-            setMessage('Invalid profile file.')
-          } finally {
-            event.target.value = ''
-          }
+        onChange={async (e) => {
+          const file = e.target.files?.[0]
+          if (file) await importFile(file)
+          e.target.value = ''
         }}
       />
     </section>

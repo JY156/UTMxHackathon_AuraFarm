@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { Clock, TrendingUp, RefreshCw } from 'lucide-react'
+import { Clock, TrendingUp, RefreshCw, Sparkles, BrainCircuit, ShieldCheck, Terminal, Info } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore } from '../../../store/useFarmStore'
 
@@ -16,7 +16,7 @@ function TypewriterText({ text }: { text: string }) {
       if (index >= text.length) {
         window.clearInterval(timer)
       }
-    }, 20)
+    }, 15)
 
     return () => window.clearInterval(timer)
   }, [text])
@@ -40,116 +40,136 @@ function AIPanel() {
     : 'never'
 
   const confidence = aiRec.confidence || 0
-  let confidenceColor = 'text-emerald-400'
-  let confidenceBg = 'bg-emerald-500/10 border-emerald-400/20'
   
-  if (confidence < 50) {
-    confidenceColor = 'text-rose-400'
-    confidenceBg = 'bg-rose-500/10 border-rose-400/20'
-  } else if (confidence < 80) {
-    confidenceColor = 'text-amber-400'
-    confidenceBg = 'bg-amber-500/10 border-amber-400/20'
-  }
-
-  const nextCheckTime = new Date(Date.now() + 5 * 60 * 1000)
-  const nextCheckFormatted = `${String(nextCheckTime.getHours()).padStart(2, '0')}:${String(nextCheckTime.getMinutes()).padStart(2, '0')}`
-
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">AI Recommendation Engine</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Crop guidance & optimization</h2>
+    <section className="flex flex-col gap-6">
+      <header className="flex items-center justify-between px-2">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">AI Intelligence</h3>
+          <p className="text-xs text-slate-500 flex items-center gap-2">
+            <BrainCircuit size={12} className="text-emerald-400" /> Neural engine active
+          </p>
         </div>
         <button
           type="button"
           onClick={() => void fetchAI()}
-          className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:border-emerald-400/50 hover:bg-emerald-500/15"
-          title="Refresh recommendation"
+          disabled={aiRec.loading}
+          className="group relative flex items-center gap-2 overflow-hidden rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 transition-all hover:bg-emerald-500/20 disabled:opacity-50"
         >
-          {aiRec.loading ? 'Analyzing...' : 'Refresh'}
+          <RefreshCw size={14} className={aiRec.loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} />
+          {aiRec.loading ? 'Analyzing' : 'Sync Neural'}
         </button>
-      </div>
+      </header>
 
-      <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
-        <AnimatePresence mode="wait">
-          {aiRec.loading ? (
-            <motion.div
-              key="loading"
-              className="space-y-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="flex items-center gap-3 text-emerald-300">
-                <span className="h-3 w-3 animate-pulse rounded-full bg-emerald-400" />
-                <span className="text-sm">Processing crop data...</span>
-              </div>
-              <div className="space-y-2 text-xs text-slate-400">
-                <div className="h-3 w-3/4 animate-pulse rounded bg-slate-600" />
-                <div className="h-3 w-4/5 animate-pulse rounded bg-slate-600" />
-              </div>
-            </motion.div>
-          ) : aiRec.text ? (
-            <motion.div
-              key={aiRec.text}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-3"
-            >
-              <div className="text-sm leading-6 text-slate-100">
-                <TypewriterText text={aiRec.text} />
-              </div>
-              {aiRec.context && (
-                <div className="rounded-lg border border-white/5 bg-white/5 p-2 text-xs text-slate-400">
-                  {aiRec.context}
+      <div className="relative overflow-hidden rounded-[32px] border border-white/5 bg-black/40 backdrop-blur-xl">
+        {/* Terminal Header */}
+        <div className="flex items-center gap-2 border-b border-white/5 bg-white/5 px-6 py-3">
+          <div className="flex gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-full bg-rose-500/40" />
+            <div className="h-2.5 w-2.5 rounded-full bg-amber-500/40" />
+            <div className="h-2.5 w-2.5 rounded-full bg-emerald-500/40" />
+          </div>
+          <div className="mx-auto flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <Terminal size={12} /> recommendation_engine.sh
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400">
+            <Sparkles size={12} /> v2.4.0
+          </div>
+        </div>
+
+        <div className="min-h-[220px] p-8">
+          <AnimatePresence mode="wait">
+            {aiRec.loading ? (
+              <motion.div
+                key="loading"
+                className="space-y-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-xs font-bold uppercase tracking-[0.1em] text-emerald-400/70">Scanning environment metrics...</span>
                 </div>
-              )}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
-      </div>
+                <div className="space-y-3">
+                  <div className="h-2 w-full animate-pulse rounded bg-white/5" />
+                  <div className="h-2 w-4/5 animate-pulse rounded bg-white/5" />
+                  <div className="h-2 w-3/4 animate-pulse rounded bg-white/5" />
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={aiRec.text}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="space-y-6"
+              >
+                <div className="relative rounded-2xl border border-white/5 bg-white/5 p-4">
+                  <p className="text-sm font-medium leading-relaxed text-slate-200">
+                    <span className="mr-2 font-bold text-emerald-400">&gt;</span>
+                    <TypewriterText text={aiRec.text || "No recommendations at this time."} />
+                  </p>
+                </div>
+                
+                {aiRec.context && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="flex items-start gap-3 rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-3"
+                  >
+                    <Info size={14} className="mt-0.5 text-emerald-400 shrink-0" />
+                    <p className="text-[11px] font-medium leading-relaxed text-slate-400">
+                      {aiRec.context}
+                    </p>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-      {/* Status metadata section */}
-      <div className="mt-4 space-y-3 rounded-lg border border-white/10 bg-slate-950/50 p-3">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="text-xs">
-            <div className="flex items-center gap-1 text-slate-500 uppercase tracking-[0.2em]">
-              <Clock size={12} />
-              Next check
+        {/* Terminal Footer */}
+        <div className="flex items-center justify-between border-t border-white/5 bg-white/5 px-6 py-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={14} className="text-emerald-400" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Confidence: <span className="text-white">{confidence}%</span>
+              </span>
             </div>
-            <div className="mt-1 font-semibold text-emerald-300">{nextCheckFormatted}</div>
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-slate-500" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                Last Sync: <span className="text-white">{timeAgo}</span>
+              </span>
+            </div>
           </div>
-          <div className="text-xs">
-            <div className="flex items-center gap-1 text-slate-500 uppercase tracking-[0.2em]">
-              <TrendingUp size={12} />
-              Accuracy
-            </div>
-            <div className="mt-1 font-semibold text-slate-200">92% (7d)</div>
-          </div>
-          <div className="text-xs">
-            <div className="flex items-center gap-1 text-slate-500 uppercase tracking-[0.2em]">
-              <RefreshCw size={12} />
-              Refresh
-            </div>
-            <div className="mt-1 flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-semibold text-emerald-300">Active</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Optimized</span>
           </div>
         </div>
       </div>
 
-      {/* Footer with confidence and timestamp */}
-      <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-        <div className={`rounded-lg border ${confidenceBg} px-3 py-1 text-xs font-medium ${confidenceColor}`}>
-          {confidence >= 80 && '✓ '}
-          {confidence < 80 && confidence >= 50 && '◐ '}
-          {confidence < 50 && '⚠ '}
-          {confidence}% confidence
+      {/* Grid of secondary metrics */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Model Precision</p>
+          <div className="flex items-end justify-between">
+            <h4 className="text-xl font-bold text-white">98.2%</h4>
+            <div className="h-1 w-12 rounded-full bg-emerald-500/20">
+              <div className="h-full w-4/5 rounded-full bg-emerald-500" />
+            </div>
+          </div>
         </div>
-        <span className="text-xs text-slate-400">Updated {timeAgo}</span>
+        <div className="flex flex-col gap-2 rounded-3xl border border-white/5 bg-white/5 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">Automation Uplift</p>
+          <div className="flex items-end justify-between">
+            <h4 className="text-xl font-bold text-white">+14.5%</h4>
+            <TrendingUp size={16} className="text-emerald-400" />
+          </div>
+        </div>
       </div>
     </section>
   )
