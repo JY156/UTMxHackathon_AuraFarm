@@ -1,11 +1,11 @@
 import { motion, useMotionValueEvent, useSpring } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { Droplets, Zap, DollarSign } from 'lucide-react'
+import { Droplets, Zap, DollarSign, TrendingUp, Sparkles, Leaf } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore } from '../../../store/useFarmStore'
 
 function AnimatedTotal({ value, decimals = 1 }: { value: number; decimals?: number }) {
-  const springValue = useSpring(value, { stiffness: 120, damping: 18 })
+  const springValue = useSpring(value, { stiffness: 100, damping: 20 })
   const [displayValue, setDisplayValue] = useState(value)
 
   useEffect(() => {
@@ -21,73 +21,76 @@ function AnimatedTotal({ value, decimals = 1 }: { value: number; decimals?: numb
 
 function ImpactTracker() {
   const impact = useFarmStore(useShallow((state) => state.impact))
-
   const baseline = { waterSaved: 12, energySaved: 9, costSaved: 48 }
-  
+
+  const stats = [
+    { label: 'Water Conservation', value: impact.waterSaved, baseline: baseline.waterSaved, unit: 'Liters', icon: Droplets, color: 'cyan', description: 'Reduction vs traditional soil' },
+    { label: 'Energy Optimization', value: impact.energySaved, baseline: baseline.energySaved, unit: 'kWh', icon: Zap, color: 'amber', description: 'Smart lighting efficiency' },
+    { label: 'Operation Yield', value: impact.costSaved, baseline: baseline.costSaved, unit: 'RM', icon: DollarSign, color: 'emerald', description: 'Total automated savings' },
+  ]
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Efficiency Metrics</p>
-          <h2 className="text-lg font-semibold text-white">Resource savings vs baseline</h2>
+    <section className="flex flex-col gap-4">
+      <header className="flex items-center justify-between px-2">
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Resource Efficiency</h3>
+        <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1 text-[10px] font-bold text-slate-400">
+          <Sparkles size={12} className="text-cyan-400" /> AI Optimized
         </div>
-        <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-          Automated mode
-        </div>
-      </div>
+      </header>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          { label: 'Water saved', value: impact.waterSaved, baseline: baseline.waterSaved, unit: 'L', icon: Droplets, color: 'text-cyan-400' },
-          { label: 'Energy saved', value: impact.energySaved, baseline: baseline.energySaved, unit: 'kWh', icon: Zap, color: 'text-amber-400' },
-          { label: 'Cost saved', value: impact.costSaved, baseline: baseline.costSaved, unit: 'RM', icon: DollarSign, color: 'text-emerald-400' },
-        ].map((item) => {
-          const IconComponent = item.icon
+      <div className="grid gap-6 sm:grid-cols-3">
+        {stats.map((item) => {
+          const Icon = item.icon
           const isPositive = item.value >= item.baseline
-          const arrow = isPositive ? '↑' : '↓'
-          const trendColor = isPositive ? 'text-emerald-400' : 'text-amber-400'
-          const pct = isPositive 
-            ? Math.round(((item.value - item.baseline) / item.baseline) * 100)
-            : Math.round(((item.baseline - item.value) / item.baseline) * 100)
+          const pct = Math.round(((item.value - item.baseline) / item.baseline) * 100)
 
           return (
             <motion.div
               key={item.label}
-              className="rounded-2xl border border-white/10 bg-slate-950/45 p-4 hover:border-emerald-400/30 transition"
-              initial={{ opacity: 0, y: 10 }}
+              className="group relative overflow-hidden rounded-[32px] border border-white/5 bg-black/20 p-6 backdrop-blur-md transition-all duration-300 hover:bg-black/30 hover:shadow-2xl"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <div className="flex items-center justify-between">
-                <div className="text-xs uppercase tracking-[0.35em] text-slate-500">{item.label}</div>
-                <div className={`p-1.5 rounded-full ${item.color.replace('text-', 'bg-').replace('400', '500/20')}`}>
-                  <IconComponent size={16} className={item.color} strokeWidth={2} />
+              <div className="flex items-start justify-between">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-${item.color}-500/10 text-${item.color}-400 ring-1 ring-${item.color}-500/20`}>
+                  <Icon size={24} />
+                </div>
+                <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${isPositive ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  <TrendingUp size={12} className={isPositive ? '' : 'rotate-180'} />
+                  {pct}%
                 </div>
               </div>
 
-              <div className="mt-3 flex items-baseline gap-2">
-                <div className="text-3xl font-semibold text-white">
-                  <AnimatedTotal value={item.value} decimals={1} />
+              <div className="mt-6">
+                <p className="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">{item.label}</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <h3 className="text-4xl font-bold tracking-tight text-white">
+                    <AnimatedTotal value={item.value} decimals={1} />
+                  </h3>
+                  <span className="text-sm font-bold text-slate-600">{item.unit}</span>
                 </div>
-                <span className="text-sm text-slate-400">{item.unit}</span>
+                <p className="mt-3 text-[10px] font-medium leading-relaxed text-slate-500">
+                  {item.description}
+                </p>
               </div>
 
-              <div className={`mt-3 flex items-center gap-1 font-semibold ${trendColor}`}>
-                <span className="text-xl">{arrow}</span>
-                <span className="text-sm">{pct}% vs baseline</span>
-              </div>
-
-              <div className="mt-2 h-1.5 rounded-full bg-slate-700 overflow-hidden">
+              {/* Progress visualizer */}
+              <div className="mt-6 h-1 w-full rounded-full bg-white/5">
                 <motion.div
-                  className={`h-full ${isPositive ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                  className={`h-full rounded-full bg-${item.color}-500 shadow-[0_0_8px_rgba(var(--${item.color}-500-rgb),0.3)]`}
                   initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, Math.abs(pct))}%` }}
-                  transition={{ delay: 0.2, duration: 1 }}
+                  animate={{ width: `${Math.min(100, 40 + Math.abs(pct))}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
                 />
               </div>
             </motion.div>
           )
         })}
+      </div>
+
+      {/* Sustainable badge footer */}
+      <div className="mt-2 flex items-center justify-center rounded-3xl border border-white/5 bg-white/5 py-3 text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500 backdrop-blur-md">
+        <Leaf size={14} className="mr-3 text-emerald-500" /> Carbon Neutral Farming Initiative
       </div>
     </section>
   )

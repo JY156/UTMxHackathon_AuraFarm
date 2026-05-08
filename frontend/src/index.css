@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-primary: #10b981;
+  --color-brand-secondary: #06b6d4;
+  --color-brand-accent: #8b5cf6;
+  --color-bg-dark: #020617;
+  --color-surface-dark: rgba(15, 23, 42, 0.6);
+  --color-border-glass: rgba(255, 255, 255, 0.1);
+}
+
+:root {
+  --brand-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  --glass-bg: rgba(15, 23, 42, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
 html, body, #root {
   margin: 0;
   padding: 0;
@@ -7,38 +23,57 @@ html, body, #root {
   height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
-  background:
-    radial-gradient(circle at top, rgba(16, 185, 129, 0.14), transparent 35%),
-    linear-gradient(180deg, #020617 0%, #07111d 55%, #030712 100%);
-  color: #e2e8f0;
-  font-family: "Aptos", "Segoe UI Variable", "Trebuchet MS", sans-serif;
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+    #020617;
+  color: #f1f5f9;
+  font-family: "Inter", "Aptos", "Segoe UI Variable", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {
   box-sizing: border-box;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
-  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.45);
+  background: transparent;
 }
 
-body {
-  min-height: 100%;
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.text-gradient {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
 }

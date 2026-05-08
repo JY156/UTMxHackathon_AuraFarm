@@ -46,21 +46,45 @@ const PLACEMENT_GRID = [
 function PlantedRack({ 
   position, 
   rotation, 
-  shelfAlerts // Pass an array of booleans [shelf0Alert, shelf1Alert]
+  shelfAlerts, // Pass an array of booleans [shelf0Alert, shelf1Alert]
+  ledMode = 'off',
+  mistActive = false
 }: { 
   position: number[], 
   rotation: number[],
-  shelfAlerts: boolean[]
+  shelfAlerts: boolean[],
+  ledMode?: string,
+  mistActive?: boolean
 }) {
+  const lightColors: Record<string, string> = {
+    full: '#ffb7ff',
+    purple: '#7b00ff',
+    off: '#000000',
+  }
+
   return (
     <group position={position as any} rotation={rotation as any}>
       <Rack position={[0, 0, 0]} scale={0.0015} />
 
+      {/* Mist Effect Indicator */}
+      {mistActive && (
+        <group position={[1.95, 0.5, -0.93]}>
+           <pointLight color="#00ffff" intensity={2} distance={4} />
+        </group>
+      )}
+
       {/* Lights Loop */}
       {[1.25, 2.3].map((yHeight, shelfIdx) => (
         <group key={`light-shelf-${shelfIdx}`} position={[1.95, yHeight, -0.93]}>
-          <Center><Led rotation={[0, Math.PI / 2, 0]} scale={0.1} /></Center>
-          <pointLight color="#ffb7ff" intensity={6} distance={5} decay={1.5} />
+          <Center><Led rotation={[0, Math.PI / 2, 0]} scale={0.1} mode={ledMode} /></Center>
+          {ledMode !== 'off' && (
+            <pointLight 
+              color={lightColors[ledMode]} 
+              intensity={ledMode === 'purple' ? 12 : 6} 
+              distance={5} 
+              decay={1.5} 
+            />
+          )}
         </group>
       ))}
 
@@ -128,7 +152,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       {/* The Room */}
       <ShippingContainer />
 
-      <Fan speed={5} position={[-1, 3.5, -3]} scale={1}/>
+      <Fan speed={5} position={[-1, 3.5, -3]} scale={1} active={actuators.fan}/>
 
       {/* STAMP OUT THE ENTIRE FACTORY */}
       {RACK_LAYOUTS.map((layout) => {
@@ -143,6 +167,8 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
             position={layout.position} 
             rotation={layout.rotation}
             shelfAlerts={rackAlerts} 
+            ledMode={actuators.led}
+            mistActive={actuators.mist}
           />
         )
       })}
@@ -150,6 +176,9 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       <Tank position={[2.8, 0, 7.5]} scale={70}/>
 
       <Pump position={[2.8, 0, 6]} scale={10} rotation={[0, Math.PI, 0]} />
+      {actuators.pump && (
+        <pointLight position={[2.8, 0.5, 6]} color="#00ccff" intensity={1} distance={2} />
+      )}
 
       {/* Pipe 1: Straight connection */}
       <Cable 

@@ -1,10 +1,11 @@
 import { motion, useMotionValueEvent, useSpring } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { Thermometer, Droplets, Waves, FlaskConical, TrendingUp, TrendingDown } from 'lucide-react'
 import { useFarmStore } from '../../../store/useFarmStore'
 
 function AnimatedNumber({ value, precision = 1 }: { value: number; precision?: number }) {
-  const springValue = useSpring(value, { stiffness: 140, damping: 24 })
+  const springValue = useSpring(value, { stiffness: 100, damping: 20 })
   const [displayValue, setDisplayValue] = useState(value)
 
   useEffect(() => {
@@ -23,43 +24,66 @@ function SensorCard({
   value,
   unit,
   range,
+  icon: Icon,
+  color,
 }: {
   label: string
   value: number
   unit: string
   range: [number, number]
+  icon: any
+  color: string
 }) {
   const outsideRange = value < range[0] || value > range[1]
-  const accent = outsideRange ? 'text-rose-300' : 'text-emerald-300'
-  const ring = outsideRange ? 'border-rose-400/35 bg-rose-500/10' : 'border-emerald-400/25 bg-emerald-500/10'
   const progressPercent = Math.max(0, Math.min(100, ((value - range[0]) / (range[1] - range[0])) * 100))
 
   return (
     <motion.div
-      className={`rounded-2xl border p-4 shadow-lg shadow-black/20 backdrop-blur-xl ${ring}`}
-      initial={{ opacity: 0, y: 12 }}
+      className={`group relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 p-5 transition-all duration-500 hover:bg-white/10`}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      whileHover={{ y: -4 }}
     >
-      <div className="text-xs uppercase tracking-[0.3em] text-slate-400">{label}</div>
-      <div className={`mt-2 flex items-end gap-1 text-3xl font-semibold ${accent}`}>
-        <AnimatedNumber value={value} precision={unit === '%' ? 0 : 1} />
-        <span className="pb-1 text-sm text-slate-300">{unit}</span>
+      <div className="flex items-start justify-between">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-${color}-500/10 text-${color}-400 ring-1 ring-${color}-500/20`}>
+          <Icon size={20} />
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          {outsideRange ? (
+            <span className="flex items-center gap-1 text-rose-400">
+              <TrendingUp size={10} /> Alert
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-emerald-400">
+              <TrendingDown size={10} /> Optimal
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Progress bar showing position within optimal range */}
-      <div className="mt-3 space-y-1">
-        <div className="h-2 rounded-full bg-slate-700 overflow-hidden">
+      <div className="mt-4">
+        <p className="text-xs font-medium text-slate-400">{label}</p>
+        <div className="mt-1 flex items-baseline gap-1">
+          <h3 className="text-3xl font-bold tracking-tight text-white">
+            <AnimatedNumber value={value} precision={unit === 'pH' ? 1 : 0} />
+          </h3>
+          <span className="text-sm font-medium text-slate-500">{unit}</span>
+        </div>
+      </div>
+
+      {/* Progress Track */}
+      <div className="mt-4 space-y-2">
+        <div className="relative h-1.5 w-full rounded-full bg-white/5">
           <motion.div
-            className={`h-full ${outsideRange ? 'bg-rose-500' : 'bg-emerald-500'}`}
+            className={`absolute h-full rounded-full bg-gradient-to-r from-${color}-500 to-${color}-400 shadow-[0_0_12px_rgba(var(--${color}-500-rgb),0.4)]`}
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>
-        <div className="text-xs text-slate-500 flex justify-between px-0.5">
-          <span>{range[0]}</span>
-          <span>{range[1]}</span>
+        <div className="flex justify-between text-[10px] font-bold text-slate-600">
+          <span>{range[0]}{unit}</span>
+          <span>{range[1]}{unit}</span>
         </div>
       </div>
     </motion.div>
@@ -79,22 +103,47 @@ function SensorMetrics() {
   }
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Environmental Sensors</p>
-          <h2 className="text-lg font-semibold text-white">Real-time climate data</h2>
-        </div>
-        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-          {profile?.name ?? 'Default profile'}
+    <section className="flex flex-col gap-4">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Environment</h3>
+        <div className="rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-bold text-emerald-400 ring-1 ring-emerald-500/20">
+          {profile?.name || 'Standard'}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <SensorCard label="Temperature" value={sensors.temp} unit="°C" range={optimal.temp} />
-        <SensorCard label="Humidity" value={sensors.humidity} unit="%" range={optimal.humidity} />
-        <SensorCard label="Moisture" value={sensors.moisture} unit="%" range={optimal.moisture} />
-        <SensorCard label="pH" value={sensors.ph} unit="pH" range={optimal.ph} />
+      <div className="grid grid-cols-2 gap-4">
+        <SensorCard 
+          label="Temperature" 
+          value={sensors.temp} 
+          unit="°C" 
+          range={optimal.temp} 
+          icon={Thermometer}
+          color="orange"
+        />
+        <SensorCard 
+          label="Humidity" 
+          value={sensors.humidity} 
+          unit="%" 
+          range={optimal.humidity} 
+          icon={Droplets}
+          color="blue"
+        />
+        <SensorCard 
+          label="Moisture" 
+          value={sensors.moisture} 
+          unit="%" 
+          range={optimal.moisture} 
+          icon={Waves}
+          color="cyan"
+        />
+        <SensorCard 
+          label="Acidity" 
+          value={sensors.ph} 
+          unit="pH" 
+          range={optimal.ph} 
+          icon={FlaskConical}
+          color="purple"
+        />
       </div>
     </section>
   )

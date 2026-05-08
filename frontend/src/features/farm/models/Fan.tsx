@@ -3,15 +3,15 @@ import React, { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Center } from '@react-three/drei'
 
-export function Fan(props: JSX.IntrinsicElements['group']) {
+export function Fan({ active = true, ...props }: JSX.IntrinsicElements['group'] & { active?: boolean }) {
   // 1. The Reference just for the parts that need to spin
   const propellerRef = useRef<THREE.Group>(null)
 
   // 2. The Animation Loop (Control the speed here)
   useFrame((state, delta) => {
-    if (propellerRef.current) {
+    if (propellerRef.current && active) {
       // Multiply by a higher number (e.g., 20) for faster speed factor
-      propellerRef.current.rotation.z += delta * 3 
+      propellerRef.current.rotation.z += delta * 15 
     }
   })
 

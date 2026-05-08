@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, ShieldAlert, X, BellOff, Info } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore } from '../../../store/useFarmStore'
 
@@ -16,78 +16,88 @@ function AlertSystem() {
   )
 
   const criticalAlerts = useMemo(() => visibleAlerts.filter((a) => a.severity === 'critical').slice(0, 3), [visibleAlerts])
-  const latestCritical = useMemo(() => criticalAlerts.at(-1) ?? null, [criticalAlerts])
 
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-400">Alert System</p>
-          <h2 className="text-lg font-semibold text-white">Critical events</h2>
-        </div>
-        <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs font-mono text-rose-200">
-          {criticalAlerts.length} CRITICAL
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {latestCritical ? (
-          <motion.div
-            key={latestCritical.id}
-            className="mb-3 rounded-2xl border border-rose-500/40 bg-rose-950/40 p-3"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="text-xs uppercase tracking-[0.35em] text-slate-300">Latest event</div>
-                <div className="mt-1 text-sm text-white">{latestCritical.message}</div>
-              </div>
-              <span className="mt-1 h-2.5 w-2.5 animate-pulse rounded-full bg-rose-500 shadow-[0_0_16px_rgba(244,63,94,0.95)]" />
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
-        {criticalAlerts.length ? (
-          criticalAlerts.map((alert) => (
-            <div key={alert.id} className="rounded-2xl border border-rose-500/30 bg-rose-950/25 p-3">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-[0.35em] text-slate-400">{alert.type.replace('_', ' ')}</div>
-                  <div className="mt-1 text-sm text-white">{alert.message}</div>
-                </div>
-                <div className="rounded-md border border-rose-500/50 bg-rose-500/20 px-2 py-1 text-[10px] font-mono uppercase text-rose-300">
-                  critical
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="border border-rose-500/50 rounded-lg px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:bg-rose-500/10 hover:border-rose-500/70"
-                  onClick={() => resolveAlert(alert.id)}
-                >
-                  Resolve
-                </button>
-                <button
-                  type="button"
-                  className="border border-slate-500/50 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5 hover:border-slate-400/70"
-                  onClick={() => setSnoozedIds((current) => [...current, alert.id])}
-                >
-                  Snooze
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-100 flex items-center gap-2">
-            <CheckCircle2 size={18} className="flex-shrink-0" />
-            <span>All systems nominal</span>
+    <section className="flex flex-col gap-4">
+      <div className="flex items-center justify-between px-2">
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Security & Health</h3>
+        {criticalAlerts.length > 0 && (
+          <div className="flex items-center gap-2 rounded-full bg-rose-500/10 px-3 py-1 text-[10px] font-bold text-rose-400 ring-1 ring-rose-500/20">
+            <ShieldAlert size={12} /> {criticalAlerts.length} Active Alerts
           </div>
         )}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <AnimatePresence mode="popLayout">
+          {criticalAlerts.length ? (
+            criticalAlerts.map((alert) => (
+              <motion.div
+                key={alert.id}
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="group relative overflow-hidden rounded-3xl border border-rose-500/20 bg-rose-500/5 p-4 backdrop-blur-md"
+              >
+                {/* Background Glow */}
+                <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-rose-500/10 blur-2xl" />
+                
+                <div className="relative flex items-start gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400">
+                    <AlertTriangle size={20} />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400/80">
+                        {alert.type.replace('_', ' ')}
+                      </p>
+                      <button 
+                        onClick={() => setSnoozedIds(prev => [...prev, alert.id])}
+                        className="rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300 transition-colors"
+                      >
+                        <BellOff size={14} />
+                      </button>
+                    </div>
+                    <p className="mt-1 text-sm font-medium leading-relaxed text-slate-200">
+                      {alert.message}
+                    </p>
+                    
+                    <div className="mt-4 flex items-center gap-2">
+                      <button
+                        onClick={() => resolveAlert(alert.id)}
+                        className="flex-1 rounded-xl bg-rose-500 py-2 text-xs font-bold text-white transition-all hover:bg-rose-600 hover:shadow-lg hover:shadow-rose-500/20"
+                      >
+                        Acknowledge & Fix
+                      </button>
+                      <button
+                        onClick={() => resolveAlert(alert.id)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                      >
+                        <Info size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-4 rounded-[32px] border border-emerald-500/20 bg-emerald-500/5 p-6 backdrop-blur-md"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400">
+                <CheckCircle2 size={24} />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">All Systems Nominal</p>
+                <p className="text-xs text-slate-400 mt-0.5">No critical issues detected in the rack.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   )
