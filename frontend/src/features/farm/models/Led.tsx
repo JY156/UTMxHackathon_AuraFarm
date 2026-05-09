@@ -25,22 +25,13 @@ export function Led({ mode = 'off', ...props }: any) {
         const mesh = obj as THREE.Mesh
         mesh.material = new THREE.MeshStandardMaterial({
           color: new THREE.Color('#222222'),
-<<<<<<< HEAD
           emissive: new THREE.Color(colorMap[mode] || colorMap.off), 
           emissiveIntensity: mode === 'off' ? 0 : 2, 
-=======
-          emissive: new THREE.Color('#ffb7ff'), // Soft pink
-          emissiveIntensity: isOff ? 0 : (activeLightLevel / 100) * 1.5, 
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
           toneMapped: false
         })
       }
     })
-<<<<<<< HEAD
   }, [clonedScene, mode])
-=======
-  }, [clonedScene, activeLightLevel, isOff])
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
 
   // 🌟 Render the CLONE here! 🌟
   return <primitive object={clonedScene} {...props} />

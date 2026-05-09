@@ -30,13 +30,8 @@ function DemoController() {
         moisture: current.sensors.moisture - 12,
         ph: current.sensors.ph - 0.2,
       },
-<<<<<<< HEAD
-      actuators: { fan: true, pump: true, mist: true, led: 'red' },
+      actuators: { fan: true, pump: true, mist: true, led: 'red' as any },
       actions: ['🎭 Demo spike injected → Fan, pump and mist forced on'],
-=======
-      actuators: { fan: true, pump: true, led: 'red', fanSpeed: 100, lightLevel: 20 },
-      actions: ['🎭 Demo spike injected → Fan and pump forced on'],
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
       impact: {
         waterSaved: current.impact.waterSaved + 1.2,
         energySaved: current.impact.energySaved + 0.1,
@@ -57,11 +52,7 @@ function DemoController() {
   const calm = () => {
     updateData({
       sensors: { temp: 23, humidity: 66, moisture: 51, ph: 6.1 },
-<<<<<<< HEAD
       actuators: { fan: false, pump: false, mist: false, led: 'full' },
-=======
-      actuators: { fan: false, pump: false, led: 'full', fanSpeed: 50, lightLevel: 100 },
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
       actions: ['🧯 Demo reset → back to stable baseline'],
       impact: useFarmStore.getState().impact,
     })

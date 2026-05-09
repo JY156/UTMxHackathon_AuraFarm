@@ -12,11 +12,7 @@ export function HumidityMist({ active = false, position = [0, 0, 0] }: { active?
     const phs = new Float32Array(particlesCount)
     for (let i = 0; i < particlesCount; i++) {
       // Spread across the room
-<<<<<<< HEAD
       pos[i * 3] = (Math.random() - 0.5) * 4
-=======
-      pos[i * 3] = (Math.random() - 0.5) * 8
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
       pos[i * 3 + 1] = Math.random() * 4
       pos[i * 3 + 2] = (Math.random() - 0.5) * 10
       phs[i] = Math.random() * Math.PI * 2

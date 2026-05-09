@@ -94,12 +94,8 @@ const createId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toStri
 
 export const useFarmStore = create<FarmState>((set, get) => ({
   sensors: { temp: 22, humidity: 65, moisture: 50, ph: 6.0 },
-<<<<<<< HEAD
   actuators: { fan: false, pump: false, mist: false, led: 'full' },
   autoMode: true,
-=======
-  actuators: { fan: false, pump: false, led: 'full', fanSpeed: 50, lightLevel: 100 },
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
   automationLog: [],
   alerts: [],
   profile: null,
@@ -207,8 +203,4 @@ export const useFarmStore = create<FarmState>((set, get) => ({
     }, 1500)
   },
   setInspectedId: (id) => set({ inspectedId: id }),
-<<<<<<< HEAD
 }))
-=======
-}))
->>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
