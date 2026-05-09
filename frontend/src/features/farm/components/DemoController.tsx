@@ -21,29 +21,66 @@ function DemoController() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const spike = () => {
+  const scenarioDepletion = () => {
+    updateData({
+      actions: ['💧 Warning: Water tank depleted. Auto-irrigation halted.'],
+    })
+    addAlert({
+      severity: 'critical',
+      type: 'resource_depletion',
+      message: 'Water reservoir empty. Manual refill required immediately.',
+      actionRequired: true,
+      target: 'tank',
+    })
+  }
+
+  const scenarioFailure = () => {
+    updateData({
+      sensors: { ...useFarmStore.getState().sensors, temp: 29.5 },
+      actions: ['⚡ Warning: Temperature rising despite fan activation.'],
+    })
+    addAlert({
+      severity: 'critical',
+      type: 'mechanical_failure',
+      message: 'Hardware failure: Fan 1 unresponsive. Check fuse or motor.',
+      actionRequired: true,
+      target: 'fan',
+    })
+  }
+
+  const scenarioBiological = () => {
+    updateData({
+      actions: ['🌿 Alert: CV scan detected potential biological threat on Rack 3.'],
+    })
+    addAlert({
+      severity: 'critical',
+      type: 'biological_threat',
+      message: 'Leaf Rust / Aphids detected. Quarantine and treat immediately.',
+      actionRequired: true,
+      target: 'rack',
+      rackId: 3,
+      shelf: 0,
+    })
+  }
+
+  const scenarioBreach = () => {
     const current = useFarmStore.getState()
     updateData({
       sensors: {
-        temp: current.sensors.temp + 4.5,
-        humidity: current.sensors.humidity - 8,
-        moisture: current.sensors.moisture - 12,
-        ph: current.sensors.ph - 0.2,
+        temp: current.sensors.temp + 6.5,
+        humidity: current.sensors.humidity + 15,
+        moisture: current.sensors.moisture - 10,
+        ph: current.sensors.ph,
       },
-      actuators: { fan: true, pump: true, mist: true, led: 'red' },
-      actions: ['🎭 Demo spike injected → Fan, pump and mist forced on'],
-      impact: {
-        waterSaved: current.impact.waterSaved + 1.2,
-        energySaved: current.impact.energySaved + 0.1,
-        costSaved: current.impact.costSaved + 2.4,
-      },
+      actuators: { fan: true, pump: true, mist: true, led: 'full' },
+      actions: ['🚨 Critical: Room ambient environment exceeded safety thresholds.'],
     })
-
     addAlert({
       severity: 'critical',
-      type: 'demo_spike',
-      message: 'Demo spike injected. Sensors are intentionally out of band.',
+      type: 'environmental_breach',
+      message: 'HVAC failure: Temperature and humidity beyond hardware compensation limits.',
       actionRequired: true,
+      target: 'environment',
     })
   }
 
@@ -88,14 +125,56 @@ function DemoController() {
             </div>
 
             {/* Body */}
-            <div className="flex flex-col gap-2 p-4">
+            <div className="flex flex-col gap-2 p-4 max-h-[60vh] overflow-y-auto scrollbar-hide">
               <button
-                onClick={spike}
+                onClick={scenarioDepletion}
+                className="group relative flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-4 transition-all hover:bg-blue-500/10"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle size={18} className="text-blue-400 group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-bold text-blue-100">Empty Tank</span>
+                    <span className="text-[10px] text-blue-400/70">Resource Depletion</span>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={scenarioFailure}
+                className="group relative flex items-center justify-between rounded-2xl border border-orange-500/20 bg-orange-500/5 px-4 py-4 transition-all hover:bg-orange-500/10"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle size={18} className="text-orange-400 group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-bold text-orange-100">Broken Fan</span>
+                    <span className="text-[10px] text-orange-400/70">Mechanical Failure</span>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={scenarioBiological}
+                className="group relative flex items-center justify-between rounded-2xl border border-purple-500/20 bg-purple-500/5 px-4 py-4 transition-all hover:bg-purple-500/10"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle size={18} className="text-purple-400 group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-bold text-purple-100">Leaf Rust</span>
+                    <span className="text-[10px] text-purple-400/70">Biological Threat</span>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={scenarioBreach}
                 className="group relative flex items-center justify-between rounded-2xl border border-rose-500/20 bg-rose-500/5 px-4 py-4 transition-all hover:bg-rose-500/10"
               >
                 <div className="flex items-center gap-3">
                   <AlertTriangle size={18} className="text-rose-400 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-bold text-rose-100">Inject Spike</span>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-bold text-rose-100">HVAC Failure</span>
+                    <span className="text-[10px] text-rose-400/70">Environmental Breach</span>
+                  </div>
                 </div>
                 <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
               </button>

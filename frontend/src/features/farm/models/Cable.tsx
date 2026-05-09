@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { useMemo } from 'react'
 
-export function Cable({ start, end, mid, color = "#dddddd", radius = 0.05 }) {
+export function Cable({ start, end, mid, color = "#dddddd", radius = 0.05, flow = false }: any) {
   // 1. Create the curve math
   const curve = useMemo(() => {
     // If no mid point, make a straight line
@@ -20,7 +20,7 @@ export function Cable({ start, end, mid, color = "#dddddd", radius = 0.05 }) {
       
       {/* 3. Use a real material for lighting and "not solid" (opacity) look */}
       <meshStandardMaterial 
-        color={color} 
+        color={flow ? "#38bdf8" : color} 
         transparent 
         opacity={0.8} // Makes it "not solid"
         roughness={0.3}

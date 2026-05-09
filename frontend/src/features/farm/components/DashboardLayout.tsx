@@ -14,6 +14,7 @@ import ImpactTracker from './ImpactTracker'
 import AIPanel from './AIPanel'
 import JSONImporter from './JSONImporter'
 import DemoController from './DemoController'
+import ComponentDetails from './ComponentDetails'
 
 const FarmViewport = memo(function FarmViewport() {
   const { sensors, actuators, alerts, profile } = useFarmStore(
@@ -83,6 +84,12 @@ function DashboardLayout() {
   const { isListening, transcript, startListening, stopListening } = useVoiceCommand()
   const [activeTab, setActiveTab] = useState<'monitor' | 'analytics' | 'ai'>('monitor')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { inspectedId, setInspectedId } = useFarmStore(
+    useShallow((state) => ({
+      inspectedId: state.inspectedId,
+      setInspectedId: state.setInspectedId,
+    })),
+  )
 
   const tabs = [
     { id: 'monitor' as const, label: 'Live Monitor', icon: Radio },
@@ -246,18 +253,51 @@ function DashboardLayout() {
               {activeTab === 'monitor' && (
                 <div className="grid h-full gap-6 xl:grid-cols-[1fr_400px]">
                   <section className="relative min-h-[600px] flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-black/40 shadow-2xl backdrop-blur-sm">
-                    <div className="absolute left-6 top-6 z-20 flex items-center gap-3">
-                      <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400 backdrop-blur-md">
-                        3D Rack Viewport
+                    {/* Top Left: Back Button */}
+                    <div className="absolute left-6 top-6 z-20">
+                      <AnimatePresence>
+                        {inspectedId && (
+                          <motion.button
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            onClick={() => setInspectedId(null)}
+                            className="flex items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/20 px-6 py-3.5 text-lg font-bold tracking-wider text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] backdrop-blur-xl transition-all hover:bg-emerald-500/30 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+                          >
+                            <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+                            Back to Farm
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Top Right: Dynamic HUD */}
+                    <div className="absolute right-6 top-6 z-20 flex flex-col items-end gap-1.5">
+                      <div className="rounded-lg border border-emerald-500/30 bg-black/60 px-4 py-2 backdrop-blur-xl">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)] animate-pulse" />
+                          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                            {inspectedId ? `Scanning // ${inspectedId.replace('-', ' ')}` : 'Digital Twin // Active'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="px-1 text-[9px] font-bold uppercase tracking-[0.4em] text-white/40">
+                        Grid Sector A-1 // UTMxHackathon
                       </div>
                     </div>
                     <FarmViewport />
                   </section>
 
                   <aside className="flex flex-col gap-6 overflow-y-auto">
-                    <SensorMetrics />
-                    <ActuatorStatus />
-                    <AlertSystem />
+                    {inspectedId ? (
+                      <ComponentDetails />
+                    ) : (
+                      <>
+                        <SensorMetrics />
+                        <ActuatorStatus />
+                        <AlertSystem />
+                      </>
+                    )}
                   </aside>
                 </div>
               )}

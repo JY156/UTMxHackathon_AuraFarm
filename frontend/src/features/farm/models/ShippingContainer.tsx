@@ -1,23 +1,26 @@
 import { Geometry, Base, Subtraction } from '@react-three/csg'
+import { useFarmStore } from '../../../store/useFarmStore'
 
 export function ShippingContainer() {
+  const inspectedId = useFarmStore(state => state.inspectedId)
+  const hideRightWall = inspectedId?.includes('rack')
   return (
     <group>
       {/* Floor */}
       <mesh position={[-0.9, -0.1, 2.8]} receiveShadow>
-        <boxGeometry args={[9.4, 0.2, 12]} />
+        <boxGeometry args={[6.2, 0.2, 12]} />
         {/* Added the missing '#' to the hex code here */}
         <meshStandardMaterial color="#95A5A6" roughness={0.9} />
       </mesh>
 
       {/* Back Wall (Now with a hole!) */}
-      <mesh position={[-1, 2.5, -3.1]} receiveShadow>
+      <mesh position={[-0.9, 2.5, -3.1]} receiveShadow>
         <meshStandardMaterial color="#D2A56d" roughness={0.7} />
         
         <Geometry>
           {/* 1. The original solid wall */}
           <Base>
-            <boxGeometry args={[9.2, 5, 0.2]} />
+            <boxGeometry args={[6.2, 5, 0.1]} />
           </Base>
 
           {/* 2. The hole cutter */}
@@ -34,7 +37,7 @@ export function ShippingContainer() {
       </mesh>
 
       {/* Right Wall */}
-      <mesh position={[3.7, 2.5, 2.8]} receiveShadow>
+      <mesh position={[2.1, 2.5, 2.8]} receiveShadow visible={!hideRightWall}>
         {/* args: [thickness, height, depth] */}
         {/* Depth matches the floor (12), height matches the back wall (5) */}
         <boxGeometry args={[0.2, 5, 12]} />
