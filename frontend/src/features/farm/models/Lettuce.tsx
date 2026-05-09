@@ -1,7 +1,8 @@
 import React from 'react'
 import { useGLTF, useTexture } from '@react-three/drei'
 
-export function Lettuce(props: JSX.IntrinsicElements['group']) {
+export function Lettuce(props: JSX.IntrinsicElements['group'] & { isDiseased?: boolean }) {
+  const { isDiseased, ...groupProps } = props
   // 1. Load the raw shape
   const { nodes } = useGLTF('/models/lettuce/scene.gltf') as any
   
@@ -12,7 +13,7 @@ export function Lettuce(props: JSX.IntrinsicElements['group']) {
   colorMap.flipY = false
 
   return (
-    <group {...props} dispose={null}>
+    <group {...groupProps} dispose={null}>
       <mesh 
         geometry={nodes.Marul_Material_0.geometry} 
         rotation={[-1.202, 0.914, 1.374]} 
@@ -21,6 +22,7 @@ export function Lettuce(props: JSX.IntrinsicElements['group']) {
         {/* 4. We drop the new texture right onto a brand new material */}
         <meshStandardMaterial 
           map={colorMap} 
+          color={isDiseased ? '#a0855b' : '#ffffff'} // Tint brown for rust/rot
           roughness={0.8}
           transparent={true}
           alphaTest={0.5}/>

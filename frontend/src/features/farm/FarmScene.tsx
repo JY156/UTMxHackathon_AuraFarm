@@ -202,6 +202,7 @@ function PlantedRack({
                     position={[coords[0], 0, coords[1]]}
                     rotation={[0, stableRotation, 0]}
                     scale={1.7}
+                    isDiseased={shelfAlerts[shelfIndex]}
                   />
                 )
               })}
