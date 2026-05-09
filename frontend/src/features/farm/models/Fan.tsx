@@ -12,7 +12,7 @@ export function Fan({ active = true, ...props }: JSX.IntrinsicElements['group'] 
 
   // 2. The Animation Loop (Control the speed here)
   useFrame((state, delta) => {
-    if (propellerRef.current && active) {
+    if (propellerRef.current && fan) {
       // Multiply by a higher number (e.g., 20) for faster speed factor
       propellerRef.current.rotation.z += delta * 15 
     }
