@@ -37,7 +37,11 @@ export function ShippingContainer() {
       </mesh>
 
       {/* Right Wall */}
+<<<<<<< HEAD
       <mesh position={[2.1, 2.5, 2.8]} receiveShadow visible={!hideRightWall}>
+=======
+      <mesh position={[3.7, 2.5, 2.8]} receiveShadow visible={!hideRightWall}>
+>>>>>>> e8fc9a56255f8e2fb7f193435e98979803bd0294
         {/* args: [thickness, height, depth] */}
         {/* Depth matches the floor (12), height matches the back wall (5) */}
         <boxGeometry args={[0.2, 5, 12]} />

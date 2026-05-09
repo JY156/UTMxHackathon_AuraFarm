@@ -29,7 +29,6 @@ const RACK_LAYOUTS = [
   // First Row (Z = 1)
   { id: 1, position: [-2, 0, 1], rotation: [0, Math.PI / 2, 0] },
   { id: 3, position: [2, 0, 1], rotation: [0, Math.PI / 2, 0] },
-
   // Second Row (Z = 5.005)
   { id: 4, position: [-2, 0, 5.005], rotation: [0, Math.PI / 2, 0] },
   { id: 6, position: [2, 0, 5.005], rotation: [0, Math.PI / 2, 0] }
@@ -126,47 +125,51 @@ function PlantedRack({
       {[1.25, 2.3].map((yHeight, shelfIdx) => (
         <group key={`light-shelf-${shelfIdx}`} position={[1.95, yHeight, -0.93]}>
           <Center><Led rotation={[0, Math.PI / 2, 0]} scale={0.1} mode={ledMode} /></Center>
-          {ledMode !== 'off' && (
-            <pointLight
-              color={lightColors[ledMode]}
-              intensity={ledMode === 'purple' ? 12 : 6}
-              distance={5}
-              decay={1.5}
-            />
-          )}
+          {
+            ledMode !== 'off' && (
+              <pointLight
+                color={lightColors[ledMode]}
+                intensity={ledMode === 'purple' ? 12 : 6}
+                distance={5}
+                decay={1.5}
+              />
+            )
+          }
         </group>
       ))}
 
       {/* 🌟 SENSORS PER TRAY 🌟 */}
-      {TRAY_HEIGHTS.map((height, shelfIndex) => (
-        <group key={`sensor-shelf-${shelfIndex}`}>
-          <SensorNode
-            // Positioned on the side leg of the rack
-            position={[0.2, height + 0.3, -0.1]}
-            rotation={[0, -Math.PI / 2, 0]}
-            // This makes it changeable!
-            isAlert={shelfAlerts[shelfIndex]}
-          />
-          {shelfAlerts[shelfIndex] && (
-            <AlertMarker position={[0, height + 0.8, 0]} />
-          )}
+      {
+        TRAY_HEIGHTS.map((height, shelfIndex) => (
+          <group key={`sensor-shelf-${shelfIndex}`}>
+            <SensorNode
+              // Positioned on the side leg of the rack
+              position={[0.2, height + 0.3, -0.1]}
+              rotation={[0, -Math.PI / 2, 0]}
+              // This makes it changeable!
+              isAlert={shelfAlerts[shelfIndex]}
+            />
+            {shelfAlerts[shelfIndex] && (
+              <AlertMarker position={[0, height + 0.8, 0]} />
+            )}
 
-          {/* Plants Loop */}
-          <group position={[0, height, 0]}>
-            {PLACEMENT_GRID.map((coords, plantIndex) => {
-              const stableRotation = (plantIndex * 45.67) % (Math.PI * 2);
-              return (
-                <Lettuce
-                  key={`plant-${shelfIndex}-${plantIndex}`}
-                  position={[coords[0], 0, coords[1]]}
-                  rotation={[0, stableRotation, 0]}
-                  scale={1.7}
-                />
-              )
-            })}
+            {/* Plants Loop */}
+            <group position={[0, height, 0]}>
+              {PLACEMENT_GRID.map((coords, plantIndex) => {
+                const stableRotation = (plantIndex * 45.67) % (Math.PI * 2);
+                return (
+                  <Lettuce
+                    key={`plant-${shelfIndex}-${plantIndex}`}
+                    position={[coords[0], 0, coords[1]]}
+                    rotation={[0, stableRotation, 0]}
+                    scale={1.7}
+                  />
+                )
+              })}
+            </group>
           </group>
-        </group>
-      ))}
+        ))
+      }
     </group>
   )
 }
@@ -224,24 +227,26 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           </SelectToFocus>
 
           {/* STAMP OUT THE ENTIRE FACTORY */}
-          {RACK_LAYOUTS.map((layout) => {
-            const rackAlerts = [
-              alerts.some(a => a.rackId === layout.id && a.shelf === 0),
-              alerts.some(a => a.rackId === layout.id && a.shelf === 1)
-            ];
+          {
+            RACK_LAYOUTS.map((layout) => {
+              const rackAlerts = [
+                alerts.some(a => a.rackId === layout.id && a.shelf === 0),
+                alerts.some(a => a.rackId === layout.id && a.shelf === 1)
+              ];
 
-            return (
-              <SelectToFocus key={`rack-${layout.id}`} id={`rack-${layout.id}`}>
-                <PlantedRack
-                  position={layout.position}
-                  rotation={layout.rotation}
-                  shelfAlerts={rackAlerts}
-                  ledMode={actuators.led}
-                  mistActive={actuators.mist}
-                />
-              </SelectToFocus>
-            )
-          })}
+              return (
+                <SelectToFocus key={`rack-${layout.id}`} id={`rack-${layout.id}`}>
+                  <PlantedRack
+                    position={layout.position}
+                    rotation={layout.rotation}
+                    shelfAlerts={rackAlerts}
+                    ledMode={actuators.led}
+                    mistActive={actuators.mist}
+                  />
+                </SelectToFocus>
+              )
+            })
+          }
 
           <SelectToFocus id="tank">
             <Tank position={[1.25, 0, 7.5]} scale={70} />
@@ -257,9 +262,11 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
             </group>
           </SelectToFocus>
 
-          {actuators.pump && (
-            <pointLight position={[2.8, 0.5, 6]} color="#00ccff" intensity={1} distance={2} />
-          )}
+          {
+            actuators.pump && (
+              <pointLight position={[2.8, 0.5, 6]} color="#00ccff" intensity={1} distance={2} />
+            )
+          }
 
           {/* Pipe 1: Straight connection */}
           <Cable
@@ -293,8 +300,8 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       <OrbitControls
         makeDefault
         minDistance={2}
-        maxDistance={40} // Increased from 25 to 40
-        maxPolarAngle={Math.PI / 2.1} // Prevent looking under the floor
+        maxDistance={40}
+        maxPolarAngle={Math.PI / 2.1}
       />
     </Canvas>
   )
