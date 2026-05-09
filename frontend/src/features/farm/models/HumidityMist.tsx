@@ -5,16 +5,16 @@ import * as THREE from 'three'
 export function HumidityMist({ active = false, position = [0, 0, 0] }: { active?: boolean, position?: number[] }) {
   const pointsRef = useRef<THREE.Points>(null)
 
-  const particlesCount = 400
+  const particlesCount = 500
   
   const [positions, phases] = useMemo(() => {
     const pos = new Float32Array(particlesCount * 3)
     const phs = new Float32Array(particlesCount)
     for (let i = 0; i < particlesCount; i++) {
-      // Spread across the room
-      pos[i * 3] = (Math.random() - 0.5) * 4
-      pos[i * 3 + 1] = Math.random() * 4
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 10
+      // Spread across the room — matches floor: 6.2 wide × 12 deep × 5 tall
+      pos[i * 3]     = (Math.random() - 0.5) * 6.2  // X: room width
+      pos[i * 3 + 1] = Math.random() * 5             // Y: room height
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 12   // Z: room depth
       phs[i] = Math.random() * Math.PI * 2
     }
     return [pos, phs]
