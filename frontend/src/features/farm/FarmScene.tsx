@@ -27,14 +27,12 @@ export interface FarmSceneProps {
 
 const RACK_LAYOUTS = [
   // First Row (Z = 1)
-  { id: 1, position: [-3.5, 0, 1], rotation: [0, Math.PI / 2, 0] },
-  { id: 2, position: [0, 0, 1], rotation: [0, Math.PI / 2, 0] },
-  { id: 3, position: [3.5, 0, 1], rotation: [0, Math.PI / 2, 0] },
+  { id: 1, position: [-2, 0, 1], rotation: [0, Math.PI / 2, 0] },
+  { id: 3, position: [2, 0, 1], rotation: [0, Math.PI / 2, 0] },
 
   // Second Row (Z = 5.005)
-  { id: 4, position: [-3.5, 0, 5.005], rotation: [0, Math.PI / 2, 0] },
-  { id: 5, position: [0, 0, 5.005], rotation: [0, Math.PI / 2, 0] },
-  { id: 6, position: [3.5, 0, 5.005], rotation: [0, Math.PI / 2, 0] }
+  { id: 4, position: [-2, 0, 5.005], rotation: [0, Math.PI / 2, 0] },
+  { id: 6, position: [2, 0, 5.005], rotation: [0, Math.PI / 2, 0] }
 ]
 
 const TRAY_HEIGHTS = [0.65, 1.7]
@@ -120,7 +118,7 @@ function PlantedRack({
       {/* Mist Effect Indicator */}
       {mistActive && (
         <group position={[1.95, 0.5, -0.93]}>
-           <pointLight color="#00ffff" intensity={2} distance={4} />
+          <pointLight color="#00ffff" intensity={2} distance={4} />
         </group>
       )}
 
@@ -222,7 +220,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
 
         <Bounds fit margin={1.2}>
           <SelectToFocus id="fan">
-            <Fan position={[-1, 3.5, -3]} scale={1} active={actuators.fan} />
+            <Fan position={[-0.9, 3.5, -3]} scale={1} />
           </SelectToFocus>
 
           {/* STAMP OUT THE ENTIRE FACTORY */}
@@ -246,11 +244,11 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           })}
 
           <SelectToFocus id="tank">
-            <Tank position={[2.8, 0, 7.5]} scale={70} />
+            <Tank position={[1.25, 0, 7.5]} scale={70} />
           </SelectToFocus>
 
           <SelectToFocus id="pump">
-            <group position={[2.8, 0, 6]} rotation={[0, Math.PI, 0]}>
+            <group position={[1.25, 0, 6]} rotation={[0, Math.PI, 0]}>
               <Pump scale={10} />
               {/* Invisible Hitbox for Pump since it's tiny/complex */}
               <mesh visible={false}>
@@ -265,8 +263,8 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
 
           {/* Pipe 1: Straight connection */}
           <Cable
-            start={[3.15, 0.23, 6]}
-            end={[3.15, 0.23, 7.5]}
+            start={[1.6, 0.23, 6]}
+            end={[1.6, 0.23, 7.5]}
             color="#cbd5e1"
             radius={0.06}
             flow={actuators.pump}
@@ -274,9 +272,9 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
 
           {/* Pipe 2: Curved connection */}
           <Cable
-            start={[3.15, 0.23, 5.75]}
-            mid={[3.15, 0.23, 5.4]}
-            end={[3.38, 0.05, 5]}
+            start={[1.6, 0.23, 5.75]}
+            mid={[1.6, 0.23, 5.4]}
+            end={[1.88, 0.05, 5]}
             color="#cbd5e1"
             radius={0.06}
             flow={actuators.pump}
@@ -286,7 +284,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           <HumidityMist active={actuators.pump || sensors.humidity > 70} position={[0, 0, 3]} />
 
           <SelectToFocus id="control-box">
-            <ControlBox position={[3.5, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />
+            <ControlBox position={[1.9, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />
           </SelectToFocus>
         </Bounds>
       </Selection>
