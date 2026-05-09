@@ -1,7 +1,7 @@
-import { memo, useState } from 'react'
+import { memo, useState, useEffect } from 'react'
 import * as THREE from 'three'
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment, Center, Bounds, useBounds } from '@react-three/drei'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls, Environment, Center } from '@react-three/drei'
 import { Selection, Select, EffectComposer, Outline } from '@react-three/postprocessing'
 import { useFarmStore } from '../../store/useFarmStore'
 import type { Alert, FarmActuators, FarmProfile, FarmSensors } from '../../store/useFarmStore'
@@ -26,12 +26,12 @@ export interface FarmSceneProps {
 }
 
 const RACK_LAYOUTS = [
-  // First Row (Z = 1)
+  // left Row (Z = 1)
   { id: 1, position: [-2, 0, 1], rotation: [0, Math.PI / 2, 0] },
-  { id: 3, position: [2, 0, 1], rotation: [0, Math.PI / 2, 0] },
-  // Second Row (Z = 5.005)
-  { id: 4, position: [-2, 0, 5.005], rotation: [0, Math.PI / 2, 0] },
-  { id: 6, position: [2, 0, 5.005], rotation: [0, Math.PI / 2, 0] }
+  { id: 2, position: [2, 0, 1], rotation: [0, Math.PI / 2, 0] },
+  // Right Row (Z = 5.005)
+  { id: 3, position: [-2, 0, 5.005], rotation: [0, Math.PI / 2, 0] },
+  { id: 4, position: [2, 0, 5.005], rotation: [0, Math.PI / 2, 0] }
 ]
 
 const TRAY_HEIGHTS = [0.65, 1.7]
@@ -44,8 +44,38 @@ const PLACEMENT_GRID = [
   [0.38, -0.36], [0.83, -0.36], [1.28, -0.36], [1.73, -0.36], [2.18, -0.36], [2.63, -0.36], [3.08, -0.36], [3.53, -0.36],
 ]
 
+let targetPos: THREE.Vector3 | null = null
+let targetLookAt: THREE.Vector3 | null = null
+
+function CameraRig() {
+  const { camera, controls } = useThree()
+  const inspectedId = useFarmStore((s) => s.inspectedId)
+
+  useEffect(() => {
+    if (inspectedId === null) {
+      targetPos = new THREE.Vector3(0, 8, 18)
+      targetLookAt = new THREE.Vector3(0, 0, 0)
+    }
+  }, [inspectedId])
+
+  useFrame((state, delta) => {
+    if (controls && targetPos && targetLookAt) {
+      const c = controls as any
+      camera.position.lerp(targetPos, 4 * delta)
+      c.target.lerp(targetLookAt, 4 * delta)
+      c.update()
+
+      if (camera.position.distanceTo(targetPos) < 0.05) {
+        targetPos = null
+        targetLookAt = null
+      }
+    }
+  })
+
+  return null
+}
+
 function SelectToFocus({ children, id }: { children: React.ReactNode, id: string }) {
-  const bounds = useBounds()
   const setInspectedId = useFarmStore((s) => s.setInspectedId)
   const [hovered, setHovered] = useState(false)
 
@@ -55,22 +85,31 @@ function SelectToFocus({ children, id }: { children: React.ReactNode, id: string
         onClick={(e) => {
           e.stopPropagation()
 
-          // Force camera to face "front" before calculating bounds
           const target = new THREE.Vector3()
           e.object.getWorldPosition(target)
 
+          targetLookAt = target.clone()
           if (id.includes('rack')) {
-            // Racks are rotated 90 degrees, so their front is along the X axis
-            e.camera.position.set(target.x + 8, target.y + 2, target.z)
-          } else if (id === 'fan') {
-            e.camera.position.set(target.x, target.y, target.z + 5)
-          } else {
-            // Tank, pump, control-box: view from left at the front
-            e.camera.position.set(target.x - 4, target.y + 1, target.z + 4)
+            targetLookAt.y += 0.5
+            // Shift the look-at point by the same amount as the camera to stay perpendicular
+            targetLookAt.z -= 2
+          } else if (id === 'tank') {
+            targetLookAt.y += 1
           }
-          e.camera.lookAt(target)
 
-          bounds.refresh(e.object).clip().fit(1.8)
+          if (id === 'fan') {
+            targetPos = new THREE.Vector3(target.x, target.y, target.z + 5)
+          } else if (id.includes('rack-2') || id.includes('rack-4')) {
+            // View from right, shifted but perpendicular
+            targetPos = new THREE.Vector3(target.x + 6, target.y + 2, target.z - 2)
+          } else if (id.includes('rack-1') || id.includes('rack-3')) {
+            // View from left, shifted but perpendicular
+            targetPos = new THREE.Vector3(target.x - 6, target.y + 2, target.z - 2)
+          } else {
+            // Default (Tank, etc)
+            targetPos = new THREE.Vector3(target.x - 6, target.y + 1.2, target.z)
+          }
+
           setInspectedId(id)
         }}
         onPointerOver={(e) => {
@@ -176,8 +215,12 @@ function PlantedRack({
 
 function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
   const inspectedId = useFarmStore((s) => s.inspectedId)
+  if (!actuators) return null
   const isNight = actuators.led === 'off'
   const isInspecting = inspectedId !== null
+
+  const fanAlert = alerts.some((a) => a.target === 'fan')
+  const tankAlert = alerts.some((a) => a.target === 'tank')
 
   const bgColor = isNight ? '#020617' : '#0f172a'
   const ambientIntensity = (isNight ? 0.1 : 0.6) * (isInspecting ? 0.4 : 1)
@@ -190,6 +233,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       // 1. WIDER CAMERA: Increased FOV from 45 to 60 and moved position back to 18
       camera={{ position: [0, 8, 18], fov: 60 }}
     >
+      <CameraRig />
       {/* 2. BACKGROUND COLOR: A deep tech-blue or clean white/grey works best */}
       <color attach="background" args={[bgColor]} />
 
@@ -221,9 +265,12 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           <Outline visibleEdgeColor="#e5e7eb" hiddenEdgeColor="#e5e7eb" blur width={1000} edgeStrength={4} />
         </EffectComposer>
 
-        <Bounds fit margin={1.2}>
+        <group>
           <SelectToFocus id="fan">
-            <Fan position={[-0.9, 3.5, -3]} scale={1} />
+            <group position={[-0.9, 3.5, -3]}>
+              <Fan scale={1} />
+              {fanAlert && <AlertMarker position={[0, 1.5, 0]} />}
+            </group>
           </SelectToFocus>
 
           {/* STAMP OUT THE ENTIRE FACTORY */}
@@ -249,7 +296,10 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           }
 
           <SelectToFocus id="tank">
-            <Tank position={[1.25, 0, 7.5]} scale={70} />
+            <group position={[1.25, 0, 7.5]}>
+              <Tank scale={70} />
+              {tankAlert && <AlertMarker position={[0, 2.5, 0]} />}
+            </group>
           </SelectToFocus>
 
           <SelectToFocus id="pump">
@@ -293,7 +343,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           <SelectToFocus id="control-box">
             <ControlBox position={[1.9, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />
           </SelectToFocus>
-        </Bounds>
+        </group>
       </Selection>
 
       {/* 5. WIDER CONTROLS: Increased maxDistance so you can zoom out further */}

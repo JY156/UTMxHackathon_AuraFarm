@@ -12,6 +12,7 @@ export interface Alert {
   actionRequired: boolean
   resolved: boolean
   timestamp: number
+  target?: 'rack' | 'tank' | 'fan' | 'environment'
   rackId?: number
   shelf?: number
 }
@@ -119,8 +120,8 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       }
 
       return {
-        sensors: data.sensors,
-        actuators: data.actuators,
+        sensors: data.sensors ? { ...state.sensors, ...data.sensors } : state.sensors,
+        actuators: data.actuators ? { ...state.actuators, ...data.actuators } : state.actuators,
         automationLog: data.actions
           ? [...state.automationLog, ...data.actions].slice(-5)
           : state.automationLog,
