@@ -97,10 +97,10 @@ function DemoController() {
     <AnimatePresence>
       {open && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="fixed bottom-6 right-6 z-[100] w-80 overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/80 p-1 shadow-2xl backdrop-blur-2xl"
+          initial={{ opacity: 0, scale: 0.9, x: -20 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.9, x: -20 }}
+          className="fixed bottom-8 left-8 z-[100] w-80 overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur-3xl"
         >
           <div className="flex flex-col">
             {/* Header */}

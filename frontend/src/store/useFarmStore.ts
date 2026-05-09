@@ -69,12 +69,19 @@ export interface FarmUpdatePayload {
   impact?: Partial<FarmImpact>
 }
 
+export interface Toast {
+  id: string
+  message: string
+  type: 'success' | 'info'
+}
+
 export interface FarmState {
   sensors: FarmSensors
   actuators: FarmActuators
   autoMode: boolean
   automationLog: string[]
   alerts: Alert[]
+  toasts: Toast[]
   profile: FarmProfile | null
   history: FarmHistoryPoint[]
   impact: FarmImpact
@@ -86,6 +93,8 @@ export interface FarmState {
   toggleAutoMode: () => void
   addAlert: (alert: Omit<Alert, 'id' | 'resolved' | 'timestamp'>) => void
   resolveAlert: (id: string) => void
+  addToast: (message: string, type?: 'success' | 'info') => void
+  removeToast: (id: string) => void
   loadProfile: (profile: FarmProfile) => void
   fetchAI: () => Promise<void>
   setInspectedId: (id: string | null) => void
@@ -99,6 +108,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   autoMode: true,
   automationLog: [],
   alerts: [],
+  toasts: [],
   profile: null,
   history: [],
   impact: { waterSaved: 0, energySaved: 0, costSaved: 0 },
@@ -141,6 +151,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
           ...state.history,
           {
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            ...state.sensors,
             ...data.sensors,
           },
         ].slice(-30),
@@ -181,10 +192,26 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       ],
     })),
   resolveAlert: (id) =>
+    set((state) => {
+      const alertToResolve = state.alerts.find(a => a.id === id)
+      if (!alertToResolve) return state
+
+      const message = `${alertToResolve.type.replace('_', ' ').toUpperCase()} RESOLVED`
+      
+      return {
+        alerts: state.alerts.map((alert) =>
+          alert.id === id ? { ...alert, resolved: true } : alert,
+        ),
+        toasts: [...state.toasts, { id: createId(), message, type: 'success' }]
+      }
+    }),
+  addToast: (message, type = 'info') => 
     set((state) => ({
-      alerts: state.alerts.map((alert) =>
-        alert.id === id ? { ...alert, resolved: true } : alert,
-      ),
+      toasts: [...state.toasts, { id: createId(), message, type }]
+    })),
+  removeToast: (id) =>
+    set((state) => ({
+      toasts: state.toasts.filter(t => t.id !== id)
     })),
   loadProfile: (profile) => set({ profile }),
   fetchAI: async () => {

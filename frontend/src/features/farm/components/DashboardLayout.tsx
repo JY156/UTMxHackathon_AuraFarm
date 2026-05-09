@@ -14,6 +14,7 @@ import ImpactTracker from './ImpactTracker'
 import AIPanel from './AIPanel'
 import JSONImporter from './JSONImporter'
 import DemoController from './DemoController'
+import ToastSystem from './ToastSystem'
 import ComponentDetails from './ComponentDetails'
 
 const FarmViewport = memo(function FarmViewport() {
@@ -84,10 +85,11 @@ function DashboardLayout() {
   const { isListening, transcript, startListening, stopListening } = useVoiceCommand()
   const [activeTab, setActiveTab] = useState<'monitor' | 'analytics' | 'ai'>('monitor')
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const { inspectedId, setInspectedId } = useFarmStore(
+  const { inspectedId, setInspectedId, alerts } = useFarmStore(
     useShallow((state) => ({
       inspectedId: state.inspectedId,
       setInspectedId: state.setInspectedId,
+      alerts: state.alerts,
     })),
   )
 
@@ -98,110 +100,48 @@ function DashboardLayout() {
   ]
 
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden bg-[#020617] text-slate-100">
-      {/* Background Effects */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,_rgba(16,185,129,0.08),_transparent_40%),radial-gradient(circle_at_80%_70%,_rgba(6,182,212,0.08),_transparent_40%)]" />
-        <div className="absolute inset-0 opacity-20 [background-image:linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:64px_64px]" />
+    <div className="relative h-screen w-screen overflow-hidden bg-[#020617] text-slate-100 font-sans antialiased">
+      {/* 🌌 BACKGROUND: The 3D World */}
+      <div className="absolute inset-0 z-0">
+        <FarmViewport />
+        {/* Subtle vignette for depth */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.6)_100%)]" />
       </div>
 
-      {/* Sidebar */}
-      <aside 
-        className={`relative z-30 flex flex-col border-r border-white/5 bg-black/40 backdrop-blur-2xl transition-all duration-500 ease-in-out ${sidebarOpen ? 'w-64' : 'w-20'}`}
-      >
-        <div className="flex h-24 items-center justify-between px-6">
-          <AnimatePresence mode="wait">
-            {sidebarOpen ? (
-              <motion.div 
-                key="logo-full"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="flex items-center gap-3"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-lg shadow-emerald-500/20">
-                  <Zap size={22} className="text-white" fill="currentColor" />
-                </div>
-                <span className="text-xl font-bold tracking-tight text-white">Aura<span className="text-emerald-400">Farm</span></span>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="logo-icon"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-lg shadow-emerald-500/20"
-              >
-                <Zap size={22} className="text-white" fill="currentColor" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <nav className="flex-1 space-y-2 px-3">
-          {tabs.map((tab) => {
-            const IconComponent = tab.icon
-            const isActive = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`group relative flex w-full items-center gap-4 rounded-2xl px-4 py-4 transition-all duration-300 ${
-                  isActive 
-                    ? 'bg-emerald-500/10 text-emerald-400' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                }`}
-              >
-                {isActive && (
-                  <motion.div 
-                    layoutId="activeTab"
-                    className="absolute inset-0 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 shadow-[inset_0_0_20px_rgba(16,185,129,0.05)]"
-                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                <IconComponent size={22} strokeWidth={isActive ? 2 : 1.5} className="relative z-10 transition-transform group-hover:scale-110" />
-                {sidebarOpen && (
-                  <span className="relative z-10 text-sm font-semibold tracking-wide">
-                    {tab.label}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </nav>
-
-        <div className="p-4">
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="flex w-full items-center justify-center rounded-xl border border-white/5 bg-white/5 py-3 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            {sidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="relative z-10 flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="flex h-24 items-center justify-between border-b border-white/5 bg-black/20 px-8 backdrop-blur-md">
-          <div className="flex flex-col">
-            <SystemStatus />
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-              {tabs.find(t => t.id === activeTab)?.label}
-              {transcript && (
-                <motion.span 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="text-xs font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20"
-                >
-                  "{transcript}"
-                </motion.span>
-              )}
-            </h2>
+      {/* 🛸 UI LAYER: Floating HUD */}
+      <div className="relative z-10 flex h-full w-full flex-col pointer-events-none">
+        
+        {/* TOP HUD: Header & Status */}
+        <header className="flex h-24 items-center justify-between px-8 pt-4 pointer-events-auto">
+          <div className="flex items-center gap-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+              <Zap size={24} className="text-white" fill="currentColor" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-2xl font-black tracking-tighter text-white uppercase">
+                Aura<span className="text-emerald-400">Farm</span>
+              </span>
+              <SystemStatus />
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 rounded-2xl border border-white/5 bg-white/5 p-1">
+            {/* Dynamic Scanning Title (Top Right) */}
+            <div className="flex flex-col items-end gap-1">
+              <div className="rounded-lg border border-emerald-500/30 bg-black/60 px-4 py-2 backdrop-blur-xl">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)] animate-pulse" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
+                    {inspectedId ? `Scanning // ${inspectedId.replace('-', ' ')}` : 'Digital Twin // Active'}
+                  </span>
+                </div>
+              </div>
+              <div className="px-1 text-[9px] font-bold uppercase tracking-[0.4em] text-white/30">
+                Grid Sector A-1 // UTMxHackathon
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
               <button 
                 onClick={isListening ? stopListening : startListening}
                 className={`relative rounded-xl p-2.5 transition-all ${
@@ -210,116 +150,119 @@ function DashboardLayout() {
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                {isListening ? (
-                  <>
-                    <Mic size={20} />
-                    <motion.div 
-                      layoutId="mic-pulse"
-                      className="absolute inset-0 rounded-xl border-2 border-rose-500"
-                      animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
-                    />
-                  </>
-                ) : (
-                  <Mic size={20} />
-                )}
-              </button>
-              <button className="rounded-xl p-2.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white">
-                <Bell size={20} />
+                <Mic size={20} />
               </button>
               <button className="rounded-xl p-2.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white">
                 <Settings size={20} />
               </button>
             </div>
-            <div className="h-10 w-10 rounded-2xl border-2 border-emerald-500/20 bg-gradient-to-br from-slate-700 to-slate-900 p-0.5 shadow-lg">
-              <div className="flex h-full w-full items-center justify-center rounded-xl bg-slate-900 text-[10px] font-bold text-emerald-400">
-                AF
-              </div>
-            </div>
           </div>
         </header>
 
-        {/* Viewport Area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8">
+        {/* MAIN VIEWPORT OVERLAYS */}
+        <div className="flex flex-1 overflow-hidden p-8 gap-8">
+          {/* LEFT WING: Permanent Navigation & Back button */}
+          <div className="flex flex-col gap-4 pointer-events-auto shrink-0 w-[72px]">
+            <nav className="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-black/40 p-2 backdrop-blur-2xl shadow-2xl">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all ${
+                      isActive ? 'bg-emerald-500 text-white shadow-[0_0_25px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon size={24} />
+                  </button>
+                )
+              })}
+            </nav>
+
+            <AnimatePresence>
+              {inspectedId && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 10 }}
+                  onClick={() => setInspectedId(null)}
+                  className="flex h-[72px] w-[72px] items-center justify-center rounded-[28px] bg-emerald-500 text-white shadow-[0_0_30px_rgba(16,185,129,0.6)] backdrop-blur-xl transition-all hover:bg-emerald-400 active:scale-95"
+                >
+                  <ChevronLeft className="h-9 w-9" strokeWidth={3} />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full"
-            >
-              {activeTab === 'monitor' && (
-                <div className="grid h-full gap-6 xl:grid-cols-[1fr_400px]">
-                  <section className="relative min-h-[600px] flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-black/40 shadow-2xl backdrop-blur-sm">
-                    {/* Top Left: Back Button */}
-                    <div className="absolute left-6 top-6 z-20">
-                      <AnimatePresence>
-                        {inspectedId && (
-                          <motion.button
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            onClick={() => setInspectedId(null)}
-                            className="flex items-center gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-500/20 px-6 py-3.5 text-lg font-bold tracking-wider text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)] backdrop-blur-xl transition-all hover:bg-emerald-500/30 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]"
-                          >
-                            <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
-                            Back to Farm
-                          </motion.button>
-                        )}
-                      </AnimatePresence>
-                    </div>
+            {activeTab === 'monitor' && (
+              <motion.div 
+                key="monitor-ui"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="flex flex-1 justify-end relative"
+              >
+                {/* RIGHT: Metrics Panel */}
+                <aside className="w-[400px] pointer-events-auto overflow-y-auto pr-2 custom-scrollbar">
+                  <AnimatePresence>
+                    <motion.div
+                      key={inspectedId || 'global'}
+                      layout
+                      initial={{ x: 20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                      className="flex flex-col gap-6"
+                    >
+                      {inspectedId ? (
+                        <ComponentDetails />
+                      ) : (
+                        <>
+                          {/* Alert System Elevates to Top if Active */}
+                          {alerts.filter(a => !a.resolved).length > 0 && <AlertSystem />}
+                          
+                          <SensorMetrics />
+                          <ActuatorStatus />
 
-                    {/* Top Right: Dynamic HUD */}
-                    <div className="absolute right-6 top-6 z-20 flex flex-col items-end gap-1.5">
-                      <div className="rounded-lg border border-emerald-500/30 bg-black/60 px-4 py-2 backdrop-blur-xl">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)] animate-pulse" />
-                          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
-                            {inspectedId ? `Scanning // ${inspectedId.replace('-', ' ')}` : 'Digital Twin // Active'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="px-1 text-[9px] font-bold uppercase tracking-[0.4em] text-white/40">
-                        Grid Sector A-1 // UTMxHackathon
-                      </div>
-                    </div>
-                    <FarmViewport />
-                  </section>
+                          {/* Alert System Stays at Bottom if Nominal */}
+                          {alerts.filter(a => !a.resolved).length === 0 && <AlertSystem />}
+                        </>
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </aside>
+              </motion.div>
+            )}
 
-                  <aside className="flex flex-col gap-6 overflow-y-auto">
-                    {inspectedId ? (
-                      <ComponentDetails />
-                    ) : (
-                      <>
-                        <SensorMetrics />
-                        <ActuatorStatus />
-                        <AlertSystem />
-                      </>
-                    )}
-                  </aside>
-                </div>
-              )}
-
-              {activeTab === 'analytics' && (
-                <div className="flex flex-col gap-6">
-                  <GrowthChart />
-                  <ImpactTracker />
-                </div>
-              )}
-
-              {activeTab === 'ai' && (
-                <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-                  <AIPanel />
-                  <JSONImporter />
-                </div>
-              )}
-            </motion.div>
+            {activeTab !== 'monitor' && (
+              <motion.div
+                key="other-tabs"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="mx-auto w-full max-w-6xl rounded-[40px] border border-white/10 bg-black/60 p-8 backdrop-blur-3xl pointer-events-auto overflow-y-auto"
+              >
+                {activeTab === 'analytics' && (
+                  <div className="flex flex-col gap-6">
+                    <GrowthChart />
+                    <ImpactTracker />
+                  </div>
+                )}
+                {activeTab === 'ai' && (
+                  <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+                    <AIPanel />
+                    <JSONImporter />
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
-      </main>
+      </div>
 
+      <ToastSystem />
       <DemoController />
     </div>
   )

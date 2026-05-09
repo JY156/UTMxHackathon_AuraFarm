@@ -27,7 +27,8 @@ function GrowthChart() {
     const maxValue = Math.max(100, ...values)
     const minValue = 0
     const scale = (value: number) => {
-      const normalized = (value - minValue) / (maxValue - minValue || 1)
+      const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0
+      const normalized = (safeValue - minValue) / (maxValue - minValue || 1)
       return height - padding.bottom - normalized * innerHeight
     }
 
@@ -189,7 +190,7 @@ function GrowthChart() {
                     <div className="h-2 w-2 rounded-full" style={{ backgroundColor: line.color }} />
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{line.label}</span>
                     <span className="ml-auto text-xs font-bold text-white">
-                      {chart.points[hoveredIndex][line.key].toFixed(1)}
+                      {(chart.points[hoveredIndex][line.key] ?? 0).toFixed(1)}
                     </span>
                   </div>
                 ))}
