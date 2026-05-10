@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import { Radio, BarChart3, Bot, ChevronLeft, ChevronRight, Settings, Bell, Cpu, Activity, Zap, Mic } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,6 +16,10 @@ import JSONImporter from './JSONImporter'
 import DemoController from './DemoController'
 import ToastSystem from './ToastSystem'
 import ComponentDetails from './ComponentDetails'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+gsap.registerPlugin(useGSAP)
 
 const FarmViewport = memo(function FarmViewport() {
   const { sensors, actuators, alerts, profile } = useFarmStore(
@@ -85,6 +89,8 @@ function DashboardLayout() {
   const { isListening, transcript, startListening, stopListening } = useVoiceCommand()
   const [activeTab, setActiveTab] = useState<'monitor' | 'analytics' | 'ai'>('monitor')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const container = useRef<HTMLDivElement>(null)
+  
   const { inspectedId, setInspectedId, alerts } = useFarmStore(
     useShallow((state) => ({
       inspectedId: state.inspectedId,
@@ -93,6 +99,16 @@ function DashboardLayout() {
     })),
   )
 
+  useGSAP(() => {
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out', duration: 0.6 } })
+    
+    // Snappier, high-performance entrance
+    tl.from('.hud-widget-left', { x: -40, opacity: 0, stagger: 0.1 })
+      .from('.hud-widget-right', { x: 40, opacity: 0, stagger: 0.1 }, '<')
+      .from('.hud-header', { y: -40, opacity: 0, force3D: true }, '-=0.4')
+      .from('.hud-demo', { scale: 0.95, opacity: 0, duration: 0.7, ease: 'back.out(1.2)' }, '-=0.2')
+  }, { scope: container })
+
   const tabs = [
     { id: 'monitor' as const, label: 'Live Monitor', icon: Radio },
     { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
@@ -100,7 +116,7 @@ function DashboardLayout() {
   ]
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#020617] text-slate-100 font-sans antialiased">
+    <div ref={container} className="relative h-screen w-screen overflow-hidden bg-[#020617] text-slate-100 font-sans antialiased">
       {/* 🌌 BACKGROUND: The 3D World */}
       <div className="absolute inset-0 z-0">
         <FarmViewport />
@@ -112,7 +128,7 @@ function DashboardLayout() {
       <div className="relative z-10 flex h-full w-full flex-col pointer-events-none">
         
         {/* TOP HUD: Header & Status */}
-        <header className="flex h-24 items-center justify-between px-8 pt-4 pointer-events-auto">
+        <header className="hud-header flex h-24 items-center justify-between px-8 pt-4 pointer-events-auto">
           <div className="flex items-center gap-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <Zap size={24} className="text-white" fill="currentColor" />
@@ -125,7 +141,7 @@ function DashboardLayout() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hud-widget-right flex items-center gap-4">
             {/* Dynamic Scanning Title (Top Right) */}
             <div className="flex flex-col items-end gap-1">
               <div className="rounded-lg border border-emerald-500/30 bg-black/60 px-4 py-2 backdrop-blur-xl">
@@ -161,8 +177,8 @@ function DashboardLayout() {
 
         {/* MAIN VIEWPORT OVERLAYS */}
         <div className="flex flex-1 overflow-hidden p-8 gap-8">
-          {/* LEFT WING: Permanent Navigation & Back button */}
-          <div className="flex flex-col gap-4 pointer-events-auto shrink-0 w-[72px]">
+          {/* LEFT HUD: Global Controls & Navigation */}
+          <div className="hud-widget-left flex flex-col gap-4 pointer-events-auto shrink-0 w-[72px]">
             <nav className="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-black/40 p-2 backdrop-blur-2xl shadow-2xl">
               {tabs.map((tab) => {
                 const Icon = tab.icon
@@ -206,7 +222,7 @@ function DashboardLayout() {
                 className="flex flex-1 justify-end relative"
               >
                 {/* RIGHT: Metrics Panel */}
-                <aside className="w-[400px] pointer-events-auto overflow-y-auto pr-2 custom-scrollbar">
+                <aside className="hud-widget-right w-[400px] pointer-events-auto overflow-y-auto pr-2 custom-scrollbar">
                   <AnimatePresence>
                     <motion.div
                       key={inspectedId || 'global'}
@@ -263,7 +279,9 @@ function DashboardLayout() {
       </div>
 
       <ToastSystem />
-      <DemoController />
+      <div className="hud-demo">
+        <DemoController />
+      </div>
     </div>
   )
 }

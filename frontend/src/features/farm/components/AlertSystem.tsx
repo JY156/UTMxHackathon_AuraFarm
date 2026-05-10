@@ -1,10 +1,15 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { CheckCircle2, AlertTriangle, ShieldAlert, X, BellOff, Info } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore } from '../../../store/useFarmStore'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+gsap.registerPlugin(useGSAP)
 
 function AlertSystem() {
+  const alertContainer = useRef<HTMLDivElement>(null)
   const { alerts, resolveAlert } = useFarmStore(
     useShallow((state) => ({ alerts: state.alerts, resolveAlert: state.resolveAlert })),
   )
@@ -17,8 +22,26 @@ function AlertSystem() {
 
   const criticalAlerts = useMemo(() => visibleAlerts.filter((a) => a.severity === 'critical').slice(0, 3), [visibleAlerts])
 
+  useGSAP(() => {
+    if (criticalAlerts.length > 0) {
+      gsap.to('.emergency-flare', {
+        opacity: [0, 0.3, 0],
+        scale: [0.8, 1.2, 0.8],
+        duration: 1.5,
+        repeat: -1,
+        ease: 'sine.inOut',
+        stagger: 0.5
+      })
+    }
+  }, { dependencies: [criticalAlerts.length], scope: alertContainer })
+
   return (
-    <section className="flex flex-col gap-4">
+    <section ref={alertContainer} className="flex flex-col gap-4 relative">
+      {/* GSAP Emergency Flare Layer */}
+      {criticalAlerts.length > 0 && (
+        <div className="emergency-flare absolute -inset-4 z-0 rounded-[40px] bg-rose-500/10 blur-3xl pointer-events-none opacity-0" />
+      )}
+      
       <div className="flex items-center justify-between px-2">
         <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
           {criticalAlerts.length > 0 ? 'Tactical Alerts' : 'System Health'}
