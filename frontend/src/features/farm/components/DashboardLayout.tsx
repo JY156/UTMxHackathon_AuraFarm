@@ -157,19 +157,30 @@ function DashboardLayout() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/40 p-1 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
               <button 
                 onClick={isListening ? stopListening : startListening}
-                className={`relative rounded-xl p-2.5 transition-all ${
+                className={`group relative flex h-12 w-12 items-center justify-center rounded-2xl transition-all border backdrop-blur-xl ${
                   isListening 
-                    ? 'bg-rose-500/20 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.3)]' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/40 shadow-[0_0_20px_rgba(244,63,94,0.3)]' 
+                    : 'bg-black/40 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:bg-emerald-500/5 hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]'
                 }`}
               >
-                <Mic size={20} />
+                <Mic size={22} strokeWidth={2.5} className={isListening ? 'animate-pulse' : ''} />
+                
+                {isListening && (
+                  <>
+                    <div className="absolute -inset-1 rounded-2xl bg-rose-500/10 animate-ping" />
+                    <div className="absolute -bottom-12 flex items-center gap-1.5 bg-black/80 px-3 py-1.5 rounded-full border border-rose-500/30 backdrop-blur-md">
+                      <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span className="text-[9px] font-bold text-rose-400 tracking-[0.2em] uppercase">Recording</span>
+                    </div>
+                  </>
+                )}
               </button>
-              <button className="rounded-xl p-2.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white">
-                <Settings size={20} />
+              
+              <button className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-slate-400 backdrop-blur-xl transition-all hover:bg-white/5 hover:text-white">
+                <Settings size={22} />
               </button>
             </div>
           </div>
@@ -179,7 +190,7 @@ function DashboardLayout() {
         <div className="flex flex-1 overflow-hidden p-8 gap-8">
           {/* LEFT HUD: Global Controls & Navigation */}
           <div className="hud-widget-left flex flex-col gap-4 pointer-events-auto shrink-0 w-[72px]">
-            <nav className="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-black/40 p-2 backdrop-blur-2xl shadow-2xl">
+            <nav className="group/nav flex flex-col gap-2 rounded-[28px] border border-white/10 bg-black/40 p-2 backdrop-blur-2xl shadow-2xl overflow-hidden transition-all duration-300 w-[72px] hover:w-[200px]">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -187,11 +198,14 @@ function DashboardLayout() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all ${
+                    className={`flex h-14 w-full items-center gap-4 px-4 rounded-2xl transition-all ${
                       isActive ? 'bg-emerald-500 text-white shadow-[0_0_25px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:bg-white/5'
                     }`}
                   >
-                    <Icon size={24} />
+                    <Icon size={24} className="shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider opacity-0 transition-opacity duration-300 group-hover/nav:opacity-100 whitespace-nowrap">
+                      {tab.label}
+                    </span>
                   </button>
                 )
               })}
