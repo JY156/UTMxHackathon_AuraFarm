@@ -59,10 +59,10 @@ function ActuatorStatus() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleToggle(item.id)}
-                className={`relative flex items-center justify-between overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 ${
+                className={`relative flex items-center justify-between overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 backdrop-blur-xl ${
                   item.active 
-                    ? `border-${colorClass}-500/30 bg-${colorClass}-500/5` 
-                    : 'border-white/5 bg-white/5'
+                    ? `border-${colorClass}-500/40 bg-${colorClass}-500/10` 
+                    : 'border-white/10 bg-black/40'
                 }`}
               >
                 <div className="flex items-center gap-4">
@@ -99,7 +99,7 @@ function ActuatorStatus() {
           <History size={14} className="text-slate-500" />
         </div>
 
-        <div className="max-h-[220px] overflow-y-auto rounded-3xl border border-white/5 bg-black/20 p-4 backdrop-blur-md scrollbar-hide">
+        <div className="max-h-[220px] overflow-y-auto rounded-3xl border border-white/10 bg-black/40 p-4 backdrop-blur-xl scrollbar-hide">
           <div className="space-y-3">
             <AnimatePresence initial={false}>
               {automationLog.length ? (
@@ -125,7 +125,7 @@ function ActuatorStatus() {
                         key={entry + i}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/5 p-3 last:border-0"
+                        className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 last:border-0"
                       >
                         <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${iconConfig.bg} ${iconConfig.color}`}>
                           <LogIcon size={16} />
