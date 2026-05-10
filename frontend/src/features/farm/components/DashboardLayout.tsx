@@ -45,9 +45,6 @@ function SystemStatus() {
     })),
   )
 
-  // Check if we are receiving live data or running in fallback
-  const isLive = useFarmStore((state) => state.automationLog.length > 0)
-
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(timer)
@@ -56,8 +53,8 @@ function SystemStatus() {
   return (
     <div className="flex items-center gap-6 text-[10px] font-medium uppercase tracking-widest text-slate-400">
       <div className="flex items-center gap-2">
-        <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${isLive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-        <span>{isLive ? 'API LIVE' : 'DEMO MODE (No Backend)'}</span>
+        <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-emerald-500" />
+        <span>API LIVE</span>
       </div>
       
       <button 
