@@ -53,8 +53,8 @@ function CameraRig() {
 
   useEffect(() => {
     if (inspectedId === null) {
-      targetPos = new THREE.Vector3(0, 8, 18)
-      targetLookAt = new THREE.Vector3(0, 0, 0)
+      targetPos = new THREE.Vector3(-22.23, 5.66, 17.24)
+      targetLookAt = new THREE.Vector3(2.94, 0.74, 2.63)
     }
   }, [inspectedId])
 
@@ -75,6 +75,22 @@ function CameraRig() {
   return null
 }
 
+function CameraLogger() {
+  const { camera, controls } = useThree()
+
+  useFrame(() => {
+    if (controls) {
+      const c = controls as any
+      // Open your browser console (F12) to see these values update live!
+      console.log(
+        `Pos: [${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}]`,
+        `Target: [${c.target.x.toFixed(2)}, ${c.target.y.toFixed(2)}, ${c.target.z.toFixed(2)}]`
+      )
+    }
+  })
+  return null
+}
+
 function SelectToFocus({ children, id }: { children: React.ReactNode, id: string }) {
   const setInspectedId = useFarmStore((s) => s.setInspectedId)
   const [hovered, setHovered] = useState(false)
@@ -85,6 +101,8 @@ function SelectToFocus({ children, id }: { children: React.ReactNode, id: string
         onClick={(e) => {
           e.stopPropagation()
 
+          // INCREASED OFFSET: Move from (3,2,5) to (5,4,8) to keep camera further away
+          const offset = new THREE.Vector3(5, 4, 8)
           const target = new THREE.Vector3()
           e.object.getWorldPosition(target)
 
@@ -94,17 +112,18 @@ function SelectToFocus({ children, id }: { children: React.ReactNode, id: string
             // Shift the look-at point by the same amount as the camera to stay perpendicular
             targetLookAt.z -= 2
           } else if (id === 'tank') {
-            targetLookAt.y += 1
+            targetLookAt.y += 0
           }
 
           if (id === 'fan') {
             targetPos = new THREE.Vector3(target.x, target.y, target.z + 5)
           } else if (id.includes('rack-2') || id.includes('rack-4')) {
             // View from right, shifted but perpendicular
-            targetPos = new THREE.Vector3(target.x + 6, target.y + 2, target.z - 2)
+            targetPos = new THREE.Vector3(target.x + 7, target.y + 3, target.z - 2)
+            targetLookAt.y += 1
           } else if (id.includes('rack-1') || id.includes('rack-3')) {
             // View from left, shifted but perpendicular
-            targetPos = new THREE.Vector3(target.x - 6, target.y + 2, target.z - 2)
+            targetPos = new THREE.Vector3(target.x - 7, target.y + 3, target.z - 2)
           } else {
             // Default (Tank, etc)
             targetPos = new THREE.Vector3(target.x - 6, target.y + 1.2, target.z)
@@ -232,9 +251,11 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
     <Canvas
       shadows
       // 1. WIDER CAMERA: Increased FOV from 45 to 60 and moved position back to 18
-      camera={{ position: [0, 8, 18], fov: 60 }}
+      camera={{ position: [-22.23, 5.66, 17.24], fov: 30 }}
     >
       <CameraRig />
+      <CameraLogger />
+
       {/* 2. BACKGROUND COLOR: A deep tech-blue or clean white/grey works best */}
       <color attach="background" args={[bgColor]} />
 
@@ -339,7 +360,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           />
 
           {/* Humidity Mist effect */}
-          <HumidityMist active={actuators.mist || sensors.humidity > 70} position={[0, 0, 3]} />
+          <HumidityMist active={actuators.mist} position={[0, 0, 3]} />
 
           <SelectToFocus id="control-box">
             <ControlBox position={[1.9, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />
@@ -350,6 +371,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       {/* 5. WIDER CONTROLS: Increased maxDistance so you can zoom out further */}
       <OrbitControls
         makeDefault
+        target={[2.94, 0.74, 2.63]}
         minDistance={2}
         maxDistance={40}
         maxPolarAngle={Math.PI / 2.1}

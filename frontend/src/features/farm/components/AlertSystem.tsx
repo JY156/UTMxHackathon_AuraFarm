@@ -1,10 +1,15 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { CheckCircle2, AlertTriangle, ShieldAlert, X, BellOff, Info } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore } from '../../../store/useFarmStore'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+gsap.registerPlugin(useGSAP)
 
 function AlertSystem() {
+  const alertContainer = useRef<HTMLDivElement>(null)
   const { alerts, resolveAlert } = useFarmStore(
     useShallow((state) => ({ alerts: state.alerts, resolveAlert: state.resolveAlert })),
   )
@@ -17,13 +22,33 @@ function AlertSystem() {
 
   const criticalAlerts = useMemo(() => visibleAlerts.filter((a) => a.severity === 'critical').slice(0, 3), [visibleAlerts])
 
+  useGSAP(() => {
+    if (criticalAlerts.length > 0) {
+      gsap.to('.emergency-flare', {
+        opacity: [0, 0.3, 0],
+        scale: [0.8, 1.2, 0.8],
+        duration: 1.5,
+        repeat: -1,
+        ease: 'sine.inOut',
+        stagger: 0.5
+      })
+    }
+  }, { dependencies: [criticalAlerts.length], scope: alertContainer })
+
   return (
-    <section className="flex flex-col gap-4">
+    <section ref={alertContainer} className="flex flex-col gap-4 relative">
+      {/* GSAP Emergency Flare Layer */}
+      {criticalAlerts.length > 0 && (
+        <div className="emergency-flare absolute -inset-4 z-0 rounded-[40px] bg-rose-500/10 blur-3xl pointer-events-none opacity-0" />
+      )}
+      
       <div className="flex items-center justify-between px-2">
-        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Security & Health</h3>
-        {criticalAlerts.length > 0 && (
-          <div className="flex items-center gap-2 rounded-full bg-rose-500/10 px-3 py-1 text-[10px] font-bold text-rose-400 ring-1 ring-rose-500/20">
-            <ShieldAlert size={12} /> {criticalAlerts.length} Active Alerts
+        <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+          {criticalAlerts.length > 0 ? 'Tactical Alerts' : 'System Health'}
+        </h3>
+        {criticalAlerts.length > 1 && (
+          <div className="flex items-center gap-2 rounded-full bg-rose-500/20 px-3 py-1 text-[10px] font-bold text-rose-400 ring-1 ring-rose-500/30">
+            <ShieldAlert size={12} /> {criticalAlerts.length} Issues
           </div>
         )}
       </div>
@@ -35,17 +60,21 @@ function AlertSystem() {
               <motion.div
                 key={alert.id}
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="group relative overflow-hidden rounded-3xl border border-rose-500/20 bg-rose-500/5 p-4 backdrop-blur-md"
+                animate={{ 
+                  boxShadow: ["0 0 15px rgba(244,63,94,0.1)", "0 0 30px rgba(244,63,94,0.25)", "0 0 15px rgba(244,63,94,0.1)"]
+                }}
+                transition={{ 
+                  layout: { type: 'spring', damping: 25, stiffness: 200 },
+                  boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                }}
+                className="group relative overflow-hidden rounded-3xl border border-rose-500/30 bg-black/60 p-5 backdrop-blur-xl"
               >
                 {/* Background Glow */}
                 <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-rose-500/10 blur-2xl" />
                 
-                <div className="relative flex items-start gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400">
-                    <AlertTriangle size={20} />
+                <div className="relative z-10 flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/20">
+                    <AlertTriangle size={22} />
                   </div>
                   
                   <div className="flex-1 min-w-0">

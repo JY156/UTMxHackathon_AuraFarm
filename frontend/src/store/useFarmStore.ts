@@ -69,12 +69,19 @@ export interface FarmUpdatePayload {
   impact?: Partial<FarmImpact>
 }
 
+export interface Toast {
+  id: string
+  message: string
+  type: 'success' | 'info'
+}
+
 export interface FarmState {
   sensors: FarmSensors
   actuators: FarmActuators
   autoMode: boolean
   automationLog: string[]
   alerts: Alert[]
+  toasts: Toast[]
   profile: FarmProfile | null
   history: FarmHistoryPoint[]
   impact: FarmImpact
@@ -86,6 +93,8 @@ export interface FarmState {
   toggleAutoMode: () => void
   addAlert: (alert: Omit<Alert, 'id' | 'resolved' | 'timestamp'>) => void
   resolveAlert: (id: string) => void
+  addToast: (message: string, type?: 'success' | 'info') => void
+  removeToast: (id: string) => void
   loadProfile: (profile: FarmProfile) => void
   fetchAI: () => Promise<void>
   setInspectedId: (id: string | null) => void
@@ -99,6 +108,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   autoMode: true,
   automationLog: [],
   alerts: [],
+  toasts: [],
   profile: null,
   history: [],
   impact: { waterSaved: 0, energySaved: 0, costSaved: 0 },
@@ -141,6 +151,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
           ...state.history,
           {
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            ...state.sensors,
             ...data.sensors,
           },
         ].slice(-30),
@@ -149,6 +160,31 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   toggleActuator: (actuator) =>
     set((state) => {
       const newVal = !state.actuators[actuator]
+
+      if (newVal) {
+        // Prevent activation if there's a hardware failure or resource depletion
+        const isFanBroken = actuator === 'fan' && state.alerts.some(a => !a.resolved && a.target === 'fan' && a.severity === 'critical')
+        const isPumpBlocked = (actuator === 'pump' || actuator === 'mist') && state.alerts.some(a => !a.resolved && a.target === 'tank' && a.severity === 'critical')
+        
+        if (isFanBroken) {
+          return {
+            toasts: [
+              ...state.toasts,
+              { id: createId(), message: 'Cannot activate FAN: Mechanical Failure detected.', type: 'info' }
+            ]
+          }
+        }
+        
+        if (isPumpBlocked) {
+          return {
+            toasts: [
+              ...state.toasts,
+              { id: createId(), message: `Cannot activate ${actuator.toUpperCase()}: Water reservoir is empty.`, type: 'info' }
+            ]
+          }
+        }
+      }
+
       return {
         actuators: { ...state.actuators, [actuator]: newVal },
         autoMode: false,
@@ -168,7 +204,40 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       ].slice(-5)
     })),
   toggleAutoMode: () => set((state) => ({ autoMode: !state.autoMode })),
-  addAlert: (alert) =>
+  addAlert: (alert) => {
+    if (alert.severity === 'critical' && typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        let speechText = `Critical alert: ${alert.message}`
+        if (alert.type === 'resource_depletion') {
+          speechText = 'Critical alert: water tank empty.'
+        } else if (alert.type === 'mechanical_failure') {
+          speechText = 'Critical alert: fan is broken, requires manual fix now.'
+        } else if (alert.type === 'biological_threat') {
+          speechText = `Critical alert: detected leaf rust on rack ${alert.rackId || 3}, remove the plant now before disease spread.`
+        }
+
+        const utterance = new SpeechSynthesisUtterance(speechText)
+        
+        // Elderly friendly settings: slower rate, slightly lower pitch for clarity
+        utterance.rate = 0.8 
+        utterance.pitch = 0.9
+
+        // Try to find a Malaysian voice (en-MY or ms-MY)
+        const voices = window.speechSynthesis.getVoices()
+        const myVoice = voices.find(v => v.lang === 'en-MY' || v.lang === 'ms-MY') || 
+                        voices.find(v => v.name.toLowerCase().includes('malaysia') || v.name.toLowerCase().includes('melayu'))
+        
+        if (myVoice) {
+          utterance.voice = myVoice
+        }
+
+        window.speechSynthesis.cancel() // Cancel any ongoing speech to prioritize the new critical alert
+        window.speechSynthesis.speak(utterance)
+      } catch (err) {
+        console.warn('TTS announcement failed', err)
+      }
+    }
+
     set((state) => ({
       alerts: [
         ...state.alerts,
@@ -179,12 +248,29 @@ export const useFarmStore = create<FarmState>((set, get) => ({
           timestamp: Date.now(),
         },
       ],
-    })),
+    }))
+  },
   resolveAlert: (id) =>
+    set((state) => {
+      const alertToResolve = state.alerts.find(a => a.id === id)
+      if (!alertToResolve) return state
+
+      const message = `${alertToResolve.type.replace('_', ' ').toUpperCase()} RESOLVED`
+      
+      return {
+        alerts: state.alerts.map((alert) =>
+          alert.id === id ? { ...alert, resolved: true } : alert,
+        ),
+        toasts: [...state.toasts, { id: createId(), message, type: 'success' }]
+      }
+    }),
+  addToast: (message, type = 'info') => 
     set((state) => ({
-      alerts: state.alerts.map((alert) =>
-        alert.id === id ? { ...alert, resolved: true } : alert,
-      ),
+      toasts: [...state.toasts, { id: createId(), message, type }]
+    })),
+  removeToast: (id) =>
+    set((state) => ({
+      toasts: state.toasts.filter(t => t.id !== id)
     })),
   loadProfile: (profile) => set({ profile }),
   fetchAI: async () => {

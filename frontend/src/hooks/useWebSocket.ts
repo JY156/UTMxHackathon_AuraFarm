@@ -31,7 +31,7 @@ const generateMockFrame = () => {
 
   useFarmStore.getState().updateData({
     sensors: { temp, humidity, moisture, ph },
-    actuators: nextActuators,
+    ...(autoMode ? { actuators: nextActuators } : {}),
     actions,
     impact: {
       waterSaved: impact.waterSaved + (nextActuators.pump ? 0.8 : 0.15),
@@ -85,6 +85,7 @@ export const useWebSocket = () => {
           const telemetry = raw.farm_telemetry
           const sensors = telemetry.sensors
           const actuators = telemetry.actuators
+          const autoMode = useFarmStore.getState().autoMode
           
           updateData({
             sensors: {
@@ -93,12 +94,14 @@ export const useWebSocket = () => {
               moisture: sensors.moisture_pct,
               ph: sensors.ph_level,
             },
-            actuators: {
-              fan: actuators.cooling_fan === 'on',
-              pump: actuators.water_pump === 'on',
-              mist: actuators.exhaust_fan === 'on', // Mapping exhaust to mist for demo
-              led: raw.led_mode || (actuators.led_intensity_pct > 0 ? 'full' : 'off'),
-            },
+            ...(autoMode ? {
+              actuators: {
+                fan: actuators.cooling_fan === 'on',
+                pump: actuators.water_pump === 'on',
+                mist: actuators.exhaust_fan === 'on', // Mapping exhaust to mist for demo
+                led: raw.led_mode || (actuators.led_intensity_pct > 0 ? 'full' : 'off'),
+              }
+            } : {}),
             impact: {
               waterSaved: raw.impact_metrics?.water_saved_liters,
               energySaved: raw.impact_metrics?.energy_saved_kwh,
@@ -106,17 +109,18 @@ export const useWebSocket = () => {
             },
           })
         } else if (raw.sensors && raw.actuators) {
+          const autoMode = useFarmStore.getState().autoMode
           // Legacy/Fallback format
           updateData({
             sensors: raw.sensors,
-            actuators: raw.actuators,
+            ...(autoMode ? { actuators: raw.actuators } : {}),
             actions: raw.actions,
             impact: raw.impact,
           })
         }
 
-        if (data.alerts?.length) {
-          data.alerts.forEach((alert) => addAlert(alert))
+        if (raw.alerts?.length) {
+          raw.alerts.forEach((alert: any) => addAlert(alert))
         }
       }
 

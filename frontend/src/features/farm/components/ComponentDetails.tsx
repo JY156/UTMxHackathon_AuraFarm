@@ -24,13 +24,8 @@ export default function ComponentDetails() {
   const isControlBox = inspectedId === 'control-box'
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      className="flex flex-col gap-6"
-    >
-      <div className="rounded-[24px] border border-white/10 bg-black/40 p-6 backdrop-blur-md">
+    <div className="flex flex-col gap-6">
+      <div className="rounded-[32px] border border-white/10 bg-black/60 p-6 backdrop-blur-3xl shadow-2xl">
         <h2 className="mb-6 flex items-center gap-3 font-mono text-xl font-bold uppercase tracking-widest text-emerald-400">
           {isRack && <Sprout className="h-6 w-6" />}
           {(isTank || isPump) && <Droplet className="h-6 w-6" />}
@@ -39,6 +34,7 @@ export default function ComponentDetails() {
           {inspectedId.replace('-', ' ')} DETAILS
         </h2>
 
+        {/* ... (Rack/Tank/Fan/ControlBox logic) */}
         {isRack && (
           <div className="grid gap-4">
             <DetailRow icon={<Thermometer />} label="Local Temp" value={`${(sensors.temp + 0.5).toFixed(1)}°C`} />
@@ -47,7 +43,7 @@ export default function ComponentDetails() {
             <DetailRow icon={<Zap />} label="Light Level (PPFD)" value={actuators.led === 'full' ? '800 µmol' : actuators.led === 'dimmed' ? '400 µmol' : '0 µmol'} />
 
             {alerts.some(a => a.target === 'rack' || a.rackId === rackNumber) && (
-              <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400">
+              <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Biological Threat Detected</span>
               </div>
@@ -59,14 +55,14 @@ export default function ComponentDetails() {
           <div className="grid gap-4">
             <DetailRow icon={<Droplet />} label="Water Level" value="85%" />
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-              <div className="h-full w-[85%] bg-blue-500" />
+              <div className="h-full w-[85%] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
             </div>
             <DetailRow icon={<Activity />} label="Pump Status" value={actuators.pump ? 'ACTIVE (1.2 L/min)' : 'IDLE'} />
             <DetailRow icon={<Activity />} label="pH Level" value="6.2" />
             <DetailRow icon={<Zap />} label="EC Level" value="1.8 mS/cm" />
 
             {alerts.some(a => a.target === 'tank') && (
-              <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400">
+              <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Resource Depletion Alert</span>
               </div>
@@ -82,7 +78,7 @@ export default function ComponentDetails() {
             <DetailRow icon={<Zap />} label="Power Draw" value={actuators.fan ? '120 W' : '0 W'} />
 
             {alerts.some(a => a.target === 'fan') && (
-              <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-red-400">
+              <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Mechanical Failure Detected</span>
               </div>
@@ -99,16 +95,16 @@ export default function ComponentDetails() {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-slate-800/50 p-4">
+    <div className="flex items-center justify-between rounded-2xl border border-white/5 bg-white/5 p-4 transition-colors hover:bg-white/10">
       <div className="flex items-center gap-3 text-slate-400">
         <div className="text-emerald-500">{icon}</div>
-        <span className="font-medium">{label}</span>
+        <span className="font-medium text-xs uppercase tracking-wider">{label}</span>
       </div>
       <span className="font-mono font-bold text-white">{value}</span>
     </div>

@@ -39,7 +39,7 @@ function SensorCard({
 
   return (
     <motion.div
-      className={`group relative overflow-hidden rounded-3xl border border-white/5 bg-white/5 p-5 transition-all duration-500 hover:bg-white/10`}
+      className={`group relative overflow-hidden rounded-3xl border border-white/10 bg-black/40 p-5 backdrop-blur-xl transition-all duration-500 hover:bg-black/60 hover:shadow-[0_0_30px_rgba(16,185,129,0.05)]`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
@@ -72,18 +72,26 @@ function SensorCard({
       </div>
 
       {/* Progress Track */}
-      <div className="mt-4 space-y-2">
-        <div className="relative h-1.5 w-full rounded-full bg-white/5">
+      <div className="mt-4 space-y-3">
+        <div className="relative h-2.5 w-full rounded-full bg-black/40 border border-white/5 overflow-hidden">
+          {/* Target Zone Marker (Center) */}
+          <div className="absolute left-[50%] h-full w-0.5 bg-white/20 z-10" />
+          
           <motion.div
-            className={`absolute h-full rounded-full bg-gradient-to-r from-${color}-500 to-${color}-400 shadow-[0_0_12px_rgba(var(--${color}-500-rgb),0.4)]`}
+            className={`absolute h-full rounded-full bg-gradient-to-r from-${color}-500 to-${color}-400 ${
+              outsideRange ? 'animate-pulse' : ''
+            }`}
             initial={{ width: 0 }}
-            animate={{ width: `${progressPercent}%` }}
+            animate={{ 
+              width: `${progressPercent}%`,
+              boxShadow: outsideRange ? `0 0 15px 2px ${color === 'orange' ? '#f97316' : color === 'blue' ? '#3b82f6' : color === 'cyan' ? '#06b6d4' : '#a855f7'}80` : 'none'
+            }}
             transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>
-        <div className="flex justify-between text-[10px] font-bold text-slate-600">
-          <span>{range[0]}{unit}</span>
-          <span>{range[1]}{unit}</span>
+        <div className="flex justify-between text-[9px] font-bold tracking-tighter uppercase text-slate-600">
+          <span>Min: {range[0]}{unit}</span>
+          <span>Max: {range[1]}{unit}</span>
         </div>
       </div>
     </motion.div>
