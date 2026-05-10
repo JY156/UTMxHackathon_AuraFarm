@@ -138,6 +138,15 @@ uvicorn main:app --reload
 - **Presentation (Canva):** [View Presentation](https://canva.link/g0ql7cf06l0dfp2)
 - **Demo Video:** [Watch Demo](https://youtu.be/W_9h3Tr46Ao)
 
+## 📜 Attributions
+
+AuraFarm uses high-quality 3D assets from the community. We are grateful to the following creators:
+- **Vertical Rack:** [ModuLife](https://sketchfab.com/3d-models/modulife-with-leafy-attachments-f9e88013172d4ddb98075ab14a9b2905) by [LemnaLife](https://sketchfab.com/LemnaLife) (CC-BY-4.0)
+- **Lettuce:** [Lettuce Model](https://sketchfab.com/3d-models/lettuce-1dfd949d61ae4d378d7c65571746f693) by [SirWyrm](https://sketchfab.com/SirWyrm) (CC-BY-4.0)
+- **Water Pump:** [1GPM Pump](https://sketchfab.com/3d-models/water-pump-1gpm-1544dfaf46ea474483a65653b455a592) by [umcosta79](https://sketchfab.com/umcosta79) (CC-BY-4.0)
+- **Water Tank:** [Plastic Water Tank](https://sketchfab.com/3d-models/plastic-water-tank-b4de261f3ad94b1c8d91070fbdca3d08) by [Akshat](https://sketchfab.com/shooter24994) (CC-BY-4.0)
+- **LED Bar:** [LED Bar](https://sketchfab.com/3d-models/led-bar-dc108ebeff934fea8784e80b908b501e) by [artsx](https://sketchfab.com/artsxnotxx) (Standard License)
+
 ---
 
 ## 👥 Team Meow3Wang
