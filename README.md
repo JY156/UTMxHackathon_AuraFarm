@@ -133,6 +133,13 @@ uvicorn main:app --reload
 
 ---
 
+## 🔗 Links & Resources
+
+- **Presentation (Canva):** [View Presentation](https://canva.link/g0ql7cf06l0dfp2)
+- **Demo Video:** [Watch Demo](https://youtu.be/W_9h3Tr46Ao)
+
+---
+
 ## 👥 Team Meow3Wang
 Developed with ❤️ for **UTMxHackathon**.
 
