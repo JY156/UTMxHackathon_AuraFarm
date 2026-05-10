@@ -360,7 +360,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           />
 
           {/* Humidity Mist effect */}
-          <HumidityMist active={actuators.mist || sensors.humidity > 70} position={[0, 0, 3]} />
+          <HumidityMist active={actuators.mist} position={[0, 0, 3]} />
 
           <SelectToFocus id="control-box">
             <ControlBox position={[1.9, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />

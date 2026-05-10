@@ -37,6 +37,7 @@ function DemoController() {
   const scenarioFailure = () => {
     updateData({
       sensors: { ...useFarmStore.getState().sensors, temp: 29.5 },
+      actuators:{ fan: false },
       actions: ['⚡ Warning: Temperature rising despite fan activation.'],
     })
     addAlert({

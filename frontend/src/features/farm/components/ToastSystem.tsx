@@ -24,18 +24,32 @@ function ToastItem({ toast, onRemove }: { toast: any; onRemove: () => void }) {
     return () => clearTimeout(timer)
   }, [onRemove])
 
+  const isSuccess = toast.type === 'success'
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20, scale: 0.9 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-      className="pointer-events-auto flex items-center gap-4 rounded-2xl border border-emerald-500/30 bg-black/80 p-4 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.15)] min-w-[300px]"
+      className={`pointer-events-auto flex items-center gap-4 rounded-2xl border bg-black/80 p-4 backdrop-blur-xl min-w-[300px] ${
+        isSuccess 
+          ? 'border-emerald-500/30 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_20px_rgba(16,185,129,0.15)]' 
+          : 'border-orange-500/30 shadow-[0_8px_32px_rgba(0,0,0,0.4),0_0_20px_rgba(249,115,22,0.15)]'
+      }`}
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/20">
-        <CheckCircle2 size={20} />
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${
+        isSuccess 
+          ? 'bg-emerald-500/20 text-emerald-400 ring-emerald-500/20' 
+          : 'bg-orange-500/20 text-orange-400 ring-orange-500/20'
+      }`}>
+        {isSuccess ? <CheckCircle2 size={20} /> : <Info size={20} />}
       </div>
       <div className="flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-400/80">Operation Success</p>
+        <p className={`text-[10px] font-bold uppercase tracking-[0.15em] ${
+          isSuccess ? 'text-emerald-400/80' : 'text-orange-400/80'
+        }`}>
+          {isSuccess ? 'Operation Success' : 'System Alert'}
+        </p>
         <p className="text-sm font-bold text-white tracking-tight">{toast.message}</p>
       </div>
       <button 
