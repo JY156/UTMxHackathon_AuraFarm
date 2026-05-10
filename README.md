@@ -36,30 +36,31 @@ Urbanization is shrinking farmland, and climate change is disrupting supply chai
 AuraFarm uses a **Hardware-Agnostic IoT Architecture** to prevent vendor lock-in and ensure low-latency responsiveness.
 
 ```mermaid
-graph TD
+graph LR
     subgraph Hardware [ESP32 / Arduino]
-        S1[DHT22 - Temp/Hum]
-        S2[Capacitive Moisture]
-        S3[Analog pH Probe]
-        S4[ESP32-CAM]
-        A1[12V Water Pump]
-        A2[WS2812B LEDs]
+        direction TB
+        S[Sensors & Actuators]
     end
 
-    Hardware -- MQTT / HTTP --> Backend[FastAPI Backend]
-    
-    subgraph Backend Logic
-        RE[Rule Engine: Thresholds/Hysteresis]
-        AI[OpenAI/Groq: Predictive AI]
+    subgraph Transport [MQTT / HTTP]
+        direction TB
+        RE[Rule Engine]
     end
-    
-    Backend -- WebSockets < 1s --> Frontend[React Frontend]
-    
-    subgraph Frontend App
-        DT[3D Twin + Dashboard]
-        VC[Voice/WhatsApp Interface]
-        IT[Impact Tracker]
+
+    subgraph Backend [FastAPI Backend]
+        direction TB
+        AI[AI Logic: OpenAI/Groq]
     end
+
+    subgraph Frontend [React Frontend]
+        direction TB
+        UI[3D Twin & Dashboard]
+        VC[Voice & WhatsApp]
+    end
+
+    Hardware --> RE
+    RE --> Backend
+    Backend -- "WebSocket < 1s" --> Frontend
 ```
 
 ---
