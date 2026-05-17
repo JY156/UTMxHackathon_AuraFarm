@@ -1,5 +1,8 @@
 # backend/main.py
 from fastapi import FastAPI, WebSocket, Request, Form, UploadFile, File, HTTPException
+import sys
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel

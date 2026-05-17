@@ -7,3 +7,5 @@ openai
 python-multipart
 python-dotenv
 requests
+google-generativeai
+Pillow
