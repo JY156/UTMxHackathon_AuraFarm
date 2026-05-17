@@ -1,19 +1,197 @@
 {
     "lettuce": {
-        "name": "Lettuce (Romaine)",
-        "ideal_conditions": {
-        "temperature_c": {"min": 18.0, "max": 24.0, "optimal": 21.0},
-        "humidity_pct": {"min": 50.0, "max": 70.0, "optimal": 60.0},
-        "ph_level": {"min": 6.0, "max": 6.5, "optimal": 6.2},
-        "ec_us_cm": {"min": 800.0, "max": 1200.0, "optimal": 1000.0},
-        "light_lux": {"min": 12000.0, "max": 20000.0, "optimal": 16000.0},
-        "moisture_pct": {"min": 40.0, "max": 60.0, "optimal": 50.0}
-        },
+        "id": "lettuce",
+        "name": "Butterhead Lettuce",
+        "crop_family": "leafy_green",
         "growth_cycle_days": 45,
-        "nutrient_requirements": {
-        "nitrogen_ppm": 150,
-        "phosphorus_ppm": 40,
-        "potassium_ppm": 200
+        "stages": {
+            "seedling": {
+                "day_range": [0, 10],
+                "targets": {
+                    "temperature_c": { "min": 20.0, "max": 22.0, "optimal": 21.0 },
+                    "humidity_pct": { "min": 70.0, "max": 80.0, "optimal": 75.0 },
+                    "ph_level": { "min": 6.0, "max": 6.3, "optimal": 6.1 },
+                    "ec_us_cm": { "min": 700.0, "max": 900.0, "optimal": 800.0 },
+                    "light_lux": { "min": 9000.0, "max": 12000.0, "optimal": 10500.0 },
+                    "moisture_pct": { "min": 55.0, "max": 65.0, "optimal": 60.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 120, "phosphorus": 35, "potassium": 160 },
+                "light_hours": 18,
+                "irrigation_note": "Keep media consistently moist; avoid saturation."
+            },
+            "vegetative": {
+                "day_range": [11, 30],
+                "targets": {
+                    "temperature_c": { "min": 18.0, "max": 22.0, "optimal": 20.0 },
+                    "humidity_pct": { "min": 55.0, "max": 70.0, "optimal": 62.0 },
+                    "ph_level": { "min": 6.1, "max": 6.4, "optimal": 6.25 },
+                    "ec_us_cm": { "min": 900.0, "max": 1100.0, "optimal": 1000.0 },
+                    "light_lux": { "min": 12000.0, "max": 16000.0, "optimal": 14000.0 },
+                    "moisture_pct": { "min": 45.0, "max": 60.0, "optimal": 52.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 150, "phosphorus": 45, "potassium": 190 },
+                "light_hours": 16,
+                "irrigation_note": "Use short pulses to keep roots oxygenated."
+            },
+            "harvest": {
+                "day_range": [31, 45],
+                "targets": {
+                    "temperature_c": { "min": 16.0, "max": 20.0, "optimal": 18.0 },
+                    "humidity_pct": { "min": 50.0, "max": 65.0, "optimal": 58.0 },
+                    "ph_level": { "min": 6.0, "max": 6.4, "optimal": 6.2 },
+                    "ec_us_cm": { "min": 1000.0, "max": 1200.0, "optimal": 1100.0 },
+                    "light_lux": { "min": 14000.0, "max": 18000.0, "optimal": 16000.0 },
+                    "moisture_pct": { "min": 40.0, "max": 55.0, "optimal": 47.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 130, "phosphorus": 40, "potassium": 180 },
+                "light_hours": 14,
+                "irrigation_note": "Slightly reduce water pressure to preserve texture before cut."
+            }
+        },
+        "summary": {
+            "ideal_conditions": {
+                "temperature_c": { "min": 18.0, "max": 22.0, "optimal": 20.0 },
+                "humidity_pct": { "min": 55.0, "max": 70.0, "optimal": 62.0 },
+                "ph_level": { "min": 6.0, "max": 6.4, "optimal": 6.2 },
+                "ec_us_cm": { "min": 900.0, "max": 1100.0, "optimal": 1000.0 },
+                "light_lux": { "min": 12000.0, "max": 16000.0, "optimal": 14000.0 },
+                "moisture_pct": { "min": 45.0, "max": 60.0, "optimal": 52.0 }
+            },
+            "nutrient_requirements": {
+                "nitrogen_ppm": 150,
+                "phosphorus_ppm": 45,
+                "potassium_ppm": 190
+            }
+        }
+    },
+    "basil": {
+        "id": "basil",
+        "name": "Sweet Basil",
+        "crop_family": "herb",
+        "growth_cycle_days": 40,
+        "stages": {
+            "seedling": {
+                "day_range": [0, 12],
+                "targets": {
+                    "temperature_c": { "min": 22.0, "max": 26.0, "optimal": 24.0 },
+                    "humidity_pct": { "min": 70.0, "max": 80.0, "optimal": 75.0 },
+                    "ph_level": { "min": 6.0, "max": 6.4, "optimal": 6.2 },
+                    "ec_us_cm": { "min": 700.0, "max": 950.0, "optimal": 825.0 },
+                    "light_lux": { "min": 10000.0, "max": 14000.0, "optimal": 12000.0 },
+                    "moisture_pct": { "min": 60.0, "max": 70.0, "optimal": 65.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 110, "phosphorus": 30, "potassium": 150 },
+                "light_hours": 18,
+                "irrigation_note": "Keep nursery trays damp but never waterlogged."
+            },
+            "vegetative": {
+                "day_range": [13, 28],
+                "targets": {
+                    "temperature_c": { "min": 22.0, "max": 27.0, "optimal": 24.5 },
+                    "humidity_pct": { "min": 60.0, "max": 75.0, "optimal": 68.0 },
+                    "ph_level": { "min": 6.0, "max": 6.5, "optimal": 6.25 },
+                    "ec_us_cm": { "min": 1000.0, "max": 1300.0, "optimal": 1150.0 },
+                    "light_lux": { "min": 14000.0, "max": 18000.0, "optimal": 16000.0 },
+                    "moisture_pct": { "min": 55.0, "max": 65.0, "optimal": 60.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 140, "phosphorus": 40, "potassium": 180 },
+                "light_hours": 17,
+                "irrigation_note": "Short, frequent cycles preserve aroma and leaf expansion."
+            },
+            "harvest": {
+                "day_range": [29, 40],
+                "targets": {
+                    "temperature_c": { "min": 20.0, "max": 24.0, "optimal": 22.0 },
+                    "humidity_pct": { "min": 50.0, "max": 65.0, "optimal": 58.0 },
+                    "ph_level": { "min": 6.1, "max": 6.5, "optimal": 6.3 },
+                    "ec_us_cm": { "min": 1100.0, "max": 1400.0, "optimal": 1250.0 },
+                    "light_lux": { "min": 16000.0, "max": 20000.0, "optimal": 18000.0 },
+                    "moisture_pct": { "min": 45.0, "max": 60.0, "optimal": 52.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 125, "phosphorus": 38, "potassium": 170 },
+                "light_hours": 14,
+                "irrigation_note": "Trim water slightly to intensify leaf oils before cut."
+            }
+        },
+        "summary": {
+            "ideal_conditions": {
+                "temperature_c": { "min": 22.0, "max": 26.0, "optimal": 24.0 },
+                "humidity_pct": { "min": 60.0, "max": 75.0, "optimal": 68.0 },
+                "ph_level": { "min": 6.0, "max": 6.5, "optimal": 6.25 },
+                "ec_us_cm": { "min": 1000.0, "max": 1300.0, "optimal": 1150.0 },
+                "light_lux": { "min": 14000.0, "max": 18000.0, "optimal": 16000.0 },
+                "moisture_pct": { "min": 55.0, "max": 65.0, "optimal": 60.0 }
+            },
+            "nutrient_requirements": {
+                "nitrogen_ppm": 140,
+                "phosphorus_ppm": 40,
+                "potassium_ppm": 180
+            }
+        }
+    },
+    "tomato": {
+        "id": "tomato",
+        "name": "Cherry Tomato",
+        "crop_family": "fruiting",
+        "growth_cycle_days": 75,
+        "stages": {
+            "seedling": {
+                "day_range": [0, 14],
+                "targets": {
+                    "temperature_c": { "min": 20.0, "max": 24.0, "optimal": 22.0 },
+                    "humidity_pct": { "min": 65.0, "max": 80.0, "optimal": 72.0 },
+                    "ph_level": { "min": 5.8, "max": 6.2, "optimal": 6.0 },
+                    "ec_us_cm": { "min": 800.0, "max": 1000.0, "optimal": 900.0 },
+                    "light_lux": { "min": 12000.0, "max": 16000.0, "optimal": 14000.0 },
+                    "moisture_pct": { "min": 60.0, "max": 70.0, "optimal": 65.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 115, "phosphorus": 35, "potassium": 165 },
+                "light_hours": 16,
+                "irrigation_note": "Maintain even moisture to prevent damping-off and root stress."
+            },
+            "vegetative": {
+                "day_range": [15, 45],
+                "targets": {
+                    "temperature_c": { "min": 22.0, "max": 26.0, "optimal": 24.0 },
+                    "humidity_pct": { "min": 55.0, "max": 70.0, "optimal": 62.0 },
+                    "ph_level": { "min": 5.9, "max": 6.3, "optimal": 6.1 },
+                    "ec_us_cm": { "min": 1000.0, "max": 1400.0, "optimal": 1200.0 },
+                    "light_lux": { "min": 16000.0, "max": 22000.0, "optimal": 19000.0 },
+                    "moisture_pct": { "min": 50.0, "max": 65.0, "optimal": 58.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 160, "phosphorus": 50, "potassium": 220 },
+                "light_hours": 16,
+                "irrigation_note": "Use deeper but less frequent watering as the canopy expands."
+            },
+            "harvest": {
+                "day_range": [46, 75],
+                "targets": {
+                    "temperature_c": { "min": 20.0, "max": 24.0, "optimal": 22.0 },
+                    "humidity_pct": { "min": 50.0, "max": 65.0, "optimal": 58.0 },
+                    "ph_level": { "min": 6.0, "max": 6.4, "optimal": 6.2 },
+                    "ec_us_cm": { "min": 1200.0, "max": 1600.0, "optimal": 1400.0 },
+                    "light_lux": { "min": 18000.0, "max": 24000.0, "optimal": 21000.0 },
+                    "moisture_pct": { "min": 45.0, "max": 60.0, "optimal": 52.0 }
+                },
+                "nutrients_ppm": { "nitrogen": 150, "phosphorus": 45, "potassium": 210 },
+                "light_hours": 14,
+                "irrigation_note": "Slightly reduce nitrogen and stabilize watering to support fruit fill."
+            }
+        },
+        "summary": {
+            "ideal_conditions": {
+                "temperature_c": { "min": 22.0, "max": 26.0, "optimal": 24.0 },
+                "humidity_pct": { "min": 55.0, "max": 70.0, "optimal": 62.0 },
+                "ph_level": { "min": 5.9, "max": 6.3, "optimal": 6.1 },
+                "ec_us_cm": { "min": 1000.0, "max": 1400.0, "optimal": 1200.0 },
+                "light_lux": { "min": 16000.0, "max": 22000.0, "optimal": 19000.0 },
+                "moisture_pct": { "min": 50.0, "max": 65.0, "optimal": 58.0 }
+            },
+            "nutrient_requirements": {
+                "nitrogen_ppm": 160,
+                "phosphorus_ppm": 50,
+                "potassium_ppm": 220
+            }
         }
     }
 }
