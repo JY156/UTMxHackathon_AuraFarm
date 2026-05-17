@@ -22,6 +22,9 @@ class Sensors(BaseModel):
     ec_us_cm: float
     light_lux: float
     tank_level_pct: float
+    nitrogen_mg_l: float
+    phosphorus_mg_l: float
+    potassium_mg_l: float
 
 # ✅ NEW: Actuators model (unchanged)
 class Actuators(BaseModel):

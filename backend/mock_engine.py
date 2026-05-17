@@ -21,6 +21,9 @@ SIM_STATE = {
     "moisture": 50.0,
     "humidity": 60.0,
     "tank_level": 85.0,
+    "nitrogen": 120.0,
+    "phosphorus": 40.0,
+    "potassium": 180.0,
 }
 
 async def telemetry_generator():
@@ -180,7 +183,10 @@ async def telemetry_generator():
                 ph_level=SIM_STATE["ph"],
                 ec_us_cm=round(850 + random.uniform(-50, 50)),
                 light_lux=round(15000 + random.uniform(-2000, 2000)),
-                tank_level_pct=round(SIM_STATE["tank_level"], 1)
+                tank_level_pct=round(SIM_STATE["tank_level"], 1),
+                nitrogen_mg_l=round(SIM_STATE["nitrogen"] + random.uniform(-2, 2), 1),
+                phosphorus_mg_l=round(SIM_STATE["phosphorus"] + random.uniform(-1, 1), 1),
+                potassium_mg_l=round(SIM_STATE["potassium"] + random.uniform(-3, 3), 1)
             ),
             actuators=actuators
         )

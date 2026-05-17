@@ -1,11 +1,16 @@
 # backend/main.py
-from fastapi import FastAPI, WebSocket, Request, Form
+from fastapi import FastAPI, WebSocket, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import List
+import io
+import google.generativeai as genai
+from PIL import Image
 from twilio.rest import Client
 from schemas import WebSocketPayload
-from mock_engine import telemetry_generator, SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS
+from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS
+from data_source import DataSource
 import json
 import time
 import asyncio
@@ -26,6 +31,10 @@ twilio_token = os.getenv("TWILIO_AUTH_TOKEN")
 # Initialize Clients
 client_groq = OpenAI(api_key=groq_key, base_url="https://api.groq.com/openai/v1") if groq_key else None
 twilio_client = Client(twilio_sid, twilio_token) if twilio_sid and twilio_token else None
+
+gemini_key = os.getenv("GEMINI_API_KEY")
+if gemini_key:
+    genai.configure(api_key=gemini_key)
 
 if not groq_key: print("⚠️ GROQ_API_KEY missing")
 if not twilio_client: print("⚠️ TWILIO credentials missing")
@@ -121,6 +130,64 @@ async def get_ai_recommendation():
         "context": "Based on current sensor readings and crop profile"
     }
 
+class CropProfile(BaseModel):
+    id: str
+    name: str
+    optimal_ph: list[float]
+    optimal_temp: list[float]
+
+@app.get("/api/profiles", response_model=List[CropProfile])
+async def get_crop_profiles():
+    """Returns optimal growing parameters for different crops"""
+    return [
+        {"id": "lettuce", "name": "Butterhead Lettuce", "optimal_ph": [5.8, 6.2], "optimal_temp": [18.0, 22.0]},
+        {"id": "basil", "name": "Sweet Basil", "optimal_ph": [6.0, 6.5], "optimal_temp": [22.0, 28.0]}
+    ]
+
+@app.post("/api/vision/analyze")
+async def analyze_plant_vision(file: UploadFile = File(...)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File provided is not an image.")
+        
+    if not os.getenv("GEMINI_API_KEY"):
+        # Mock response if no API key
+        return {
+            "disease": "Leaf Rust",
+            "confidence": 0.92,
+            "growth_stage": "vegetative",
+            "nutrient_deficiency": "potassium"
+        }
+        
+    try:
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents))
+        
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = """
+        Analyze this plant image and return a JSON object with exactly these fields:
+        {
+            "disease": "name of disease or null",
+            "confidence": float between 0.0 and 1.0,
+            "growth_stage": "seedling, vegetative, flowering, or harvest",
+            "nutrient_deficiency": "name of deficiency or null"
+        }
+        Return ONLY valid JSON. Do not use Markdown formatting blocks.
+        """
+        response = model.generate_content([prompt, image])
+        response_text = response.text.replace("```json", "").replace("```", "").strip()
+        
+        return json.loads(response_text)
+    except Exception as e:
+        print(f"Vision API Error: {e}")
+        # Fallback to mock on error
+        return {
+            "disease": "Unknown",
+            "confidence": 0.5,
+            "growth_stage": "unknown",
+            "nutrient_deficiency": None,
+            "error": str(e)
+        }
+
 @app.post("/whatsapp")
 async def whatsapp_webhook(
     From: str = Form(...),
@@ -191,8 +258,9 @@ async def whatsapp_webhook(
 async def websocket_endpoint(ws: WebSocket):
     await ws.accept()
     print("🔌 WebSocket Connected")
+    data_source = DataSource()
     try:
-        async for payload in telemetry_generator():
+        async for payload in data_source.telemetry_stream():
             sensors = payload["farm_telemetry"]["sensors"]
             LATEST_STATE["temp"], LATEST_STATE["ph"], LATEST_STATE["moisture"] = sensors["temperature_c"], sensors["ph_level"], sensors["moisture_pct"]
             await ws.send_json(payload)
