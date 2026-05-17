@@ -30,6 +30,11 @@ export interface FarmActuators {
   pump: boolean
   mist: boolean
   led: LedMode
+  valveN: boolean
+  valveP: boolean
+  valveK: boolean
+  valveAcidic: boolean
+  valveAlkaline: boolean
 }
 
 export interface FarmProfile {
@@ -78,6 +83,20 @@ export interface Toast {
   type: 'success' | 'info' | 'error'
 }
 
+export interface CVData {
+  crop_type: string
+  overall_health: string
+  diseases_detected: Array<{ name: string; confidence: number; severity: string }>
+  nutrient_deficiencies: {
+    nitrogen: { detected: boolean; confidence: number; severity_score: number }
+    phosphorus: { detected: boolean; confidence: number; severity_score: number }
+    potassium: { detected: boolean; confidence: number; severity_score: number }
+  }
+  visual_symptoms: string[]
+  recommendations: string[]
+}
+
+
 export interface FarmState {
   // Backend Synced State (Placeholders)
   sensors: FarmSensors | null
@@ -95,6 +114,7 @@ export interface FarmState {
   inspectedId: string | null
   connectionStatus: 'connected' | 'disconnected' | 'reconnecting'
   connectionAttempts: number
+  cvData: CVData | null
 
   // Actions
   syncFromBackend: (payload: WebSocketPayload) => void
@@ -108,6 +128,8 @@ export interface FarmState {
   loadProfile: (profile: FarmProfile) => void
   fetchAI: () => Promise<void>
   setInspectedId: (id: string | null) => void
+  triggerLocalPHDrop: () => void
+  setCvData: (data: CVData | null) => void
 }
 
 const createId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
@@ -136,6 +158,18 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   inspectedId: null,
   connectionStatus: 'disconnected',
   connectionAttempts: 0,
+  cvData: {
+    crop_type: "cabbage",
+    overall_health: "healthy",
+    diseases_detected: [],
+    nutrient_deficiencies: {
+      nitrogen: { detected: false, confidence: 0, severity_score: 0 },
+      phosphorus: { detected: false, confidence: 0, severity_score: 0 },
+      potassium: { detected: false, confidence: 0, severity_score: 0 }
+    },
+    visual_symptoms: [],
+    recommendations: []
+  },
 
   syncFromBackend: (payload) =>
     set((state) => {
@@ -343,4 +377,36 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   },
 
   setInspectedId: (id) => set({ inspectedId: id }),
+
+  triggerLocalPHDrop: () => {
+    set((state) => {
+      if (!state.sensors || !state.actuators) return state
+      
+      return {
+        sensors: { ...state.sensors, ph: 4.8 },
+        actuators: { ...state.actuators, valveAlkaline: true },
+        automationLog: [
+          ...state.automationLog,
+          `[SYSTEM] pH drop detected. Activating Alkaline dosing valve.`
+        ].slice(-5)
+      }
+    })
+    
+    // Auto resolve after 8 seconds
+    setTimeout(() => {
+      useFarmStore.setState((state) => {
+        if (!state.sensors || !state.actuators) return state
+        return {
+          sensors: { ...state.sensors, ph: 6.2 },
+          actuators: { ...state.actuators, valveAlkaline: false },
+          automationLog: [
+            ...state.automationLog,
+            `[SYSTEM] pH stabilized at 6.2. Alkaline valve closed.`
+          ].slice(-5)
+        }
+      })
+    }, 8000)
+  },
+  
+  setCvData: (data) => set({ cvData: data })
 }))

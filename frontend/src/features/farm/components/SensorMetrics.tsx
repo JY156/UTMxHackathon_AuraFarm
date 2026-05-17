@@ -99,8 +99,8 @@ function SensorCard({
 }
 
 function SensorMetrics() {
-  const { sensors, profile } = useFarmStore(
-    useShallow((state) => ({ sensors: state.sensors, profile: state.profile })),
+  const { sensors, profile, cvData } = useFarmStore(
+    useShallow((state) => ({ sensors: state.sensors, profile: state.profile, cvData: state.cvData })),
   )
 
   const optimal = profile?.optimal ?? {
@@ -152,6 +152,52 @@ function SensorMetrics() {
           icon={FlaskConical}
           color="purple"
         />
+        
+        {/* CV Health View */}
+        {cvData && (
+          <div className="col-span-2 rounded-3xl border border-white/10 bg-black/40 p-5 backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.2em] text-slate-400">
+                <span className="text-indigo-400 text-lg">👁️</span>
+                <span>Vision AI Crop Health</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest -mr-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                Camera Active
+              </div>
+            </div>
+
+            {/* Disease Banner if not healthy */}
+            {cvData.overall_health !== 'healthy' && cvData.diseases_detected.length > 0 && (
+              <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-rose-400">⚠️</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-rose-400">
+                    {cvData.diseases_detected[0].name}
+                  </span>
+                </div>
+                <p className="text-[10px] text-rose-300">
+                  {cvData.recommendations[0] || 'Take immediate action.'}
+                </p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Nitrogen', optimal: !cvData.nutrient_deficiencies.nitrogen.detected },
+                { label: 'Phosphorus', optimal: !cvData.nutrient_deficiencies.phosphorus.detected },
+                { label: 'Potassium', optimal: !cvData.nutrient_deficiencies.potassium.detected },
+              ].map((item) => (
+                <div key={item.label} className="flex flex-col items-center justify-center rounded-2xl bg-white/5 p-3 text-center border border-white/5 transition-all hover:bg-white/10">
+                  <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase mb-2">{item.label}</span>
+                  <span className={`text-xs font-black tracking-widest uppercase ${item.optimal ? 'text-emerald-400' : 'text-rose-400 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]'}`}>
+                    {item.optimal ? 'Optimal' : 'Deficient'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   )
