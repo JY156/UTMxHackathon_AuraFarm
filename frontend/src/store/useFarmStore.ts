@@ -385,9 +385,10 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       return {
         sensors: { ...state.sensors, ph: 4.8 },
         actuators: { ...state.actuators, valveAlkaline: true },
+        inspectedId: 'tank-alkaline',
         automationLog: [
           ...state.automationLog,
-          `[SYSTEM] pH drop detected. Activating Alkaline dosing valve.`
+          `[SYSTEM] pH drop detected. Activating Alkaline dosing valve. Re-evaluating in 5 mins.`
         ].slice(-5)
       }
     })
