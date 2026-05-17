@@ -1,7 +1,9 @@
 import * as THREE from 'three'
-import React from 'react'
+import React, { useRef } from 'react'
 import { useGLTF, Center } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import type { GLTF } from 'three-stdlib'
+import { useFarmStore } from '../../../store/useFarmStore'
 
 type GLTFResult = GLTF & {
   nodes: {
@@ -15,26 +17,37 @@ type GLTFResult = GLTF & {
 export function Tank(props: JSX.IntrinsicElements['group']) {
   const { nodes, materials } = useGLTF('/models/tank/scene-transformed.glb') as GLTFResult
   
+  // Read tank level (0-100) from Zustand store
+  const tankLevel = useFarmStore((state) => state.sensors?.tankLevel ?? 85)
+  
+  // Ref for animating the water smoothly
+  const waterRef = useRef<THREE.Mesh>(null)
+  
+  // Dimensions in the local coordinate space AFTER 0.01 scale applied to the tank
+  // (FarmScene scales the entire Tank component by 70)
+  const MAX_WATER_HEIGHT = 0.024
+  const WATER_RADIUS = 0.0135
+  
+  // The local Y coordinate of the bottom of the tank
+  const TANK_BOTTOM_Y = -MAX_WATER_HEIGHT / 2
+
+  useFrame((state, delta) => {
+    // Water level animation removed as water mesh is removed.
+  })
+
   return (
     <group {...props} dispose={null}>
-      {/* 🌟 Wrapping it in Center automatically fixes the weird 172 offset! 🌟 */}
       <Center top>
+        {/* Outer Tank Model */}
         <mesh 
           name="Cylinder_Material001_0" 
           castShadow 
           receiveShadow 
           geometry={nodes.Cylinder_Material001_0.geometry} 
           material={materials['Material.001']} 
-          
-          // 1. Reset Position to center
           position={[0, 0, 0]} 
-          
-          // 2. Keep the rotation (it usually fixes the Blender Z/Y axis difference)
           rotation={[-Math.PI / 2, 0, 0]} 
-          
-          // 3. Reset the massive 661 scale to a normal 1 or 0.01
-          // Sketchfab models are often in millimeters. 0.01 or 0.001 usually fixes them.
-          scale={0.01} 
+          scale={0.01}
         />
       </Center>
     </group>

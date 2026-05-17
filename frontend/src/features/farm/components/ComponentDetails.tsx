@@ -53,12 +53,15 @@ export default function ComponentDetails() {
 
         {(isTank || isPump) && (
           <div className="grid gap-4">
-            <DetailRow icon={<Droplet />} label="Water Level" value="85%" />
+            <DetailRow icon={<Droplet />} label="Water Level" value={`${sensors.tankLevel.toFixed(1)}%`} />
             <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-              <div className="h-full w-[85%] bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+              <div 
+                className={`h-full transition-all duration-1000 ${sensors.tankLevel <= 15 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]'}`}
+                style={{ width: `${Math.max(0, Math.min(100, sensors.tankLevel))}%` }} 
+              />
             </div>
             <DetailRow icon={<Activity />} label="Pump Status" value={actuators.pump ? 'ACTIVE (1.2 L/min)' : 'IDLE'} />
-            <DetailRow icon={<Activity />} label="pH Level" value="6.2" />
+            <DetailRow icon={<Activity />} label="pH Level" value={sensors.ph.toFixed(1)} />
             <DetailRow icon={<Zap />} label="EC Level" value="1.8 mS/cm" />
 
             {alerts.some(a => a.target === 'tank') && (

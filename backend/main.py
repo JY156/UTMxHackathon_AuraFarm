@@ -1,10 +1,13 @@
 # backend/main.py
 from fastapi import FastAPI, WebSocket, Request, Form
 from fastapi.responses import JSONResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from twilio.rest import Client
 from schemas import WebSocketPayload
-from mock_engine import telemetry_generator, SHARED_OVERRIDE
+from mock_engine import telemetry_generator, SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS
 import json
+import time
 import asyncio
 import os
 import requests
@@ -30,11 +33,93 @@ else: print("✅ All systems initialized.")
 
 app = FastAPI(title="AuraFarm Backend")
 
+# Allow Frontend to Connect
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Global state
 LATEST_STATE = {"temp": 24.0, "ph": 6.1, "moisture": 52.0, "status": "All systems nominal"}
 
 @app.get("/")
 def root(): return {"status": "🟢 Backend running"}
+
+@app.post("/api/demo/scenario")
+async def trigger_scenario(type: str):
+    print(f"🎬 Demo scenario triggered: {type}")
+    SHARED_OVERRIDE["drama"] = type
+    
+    return {"status": "scenario_queued", "scenario": type}
+
+class AlertResolve(BaseModel):
+    id: str
+
+@app.post("/api/alert/resolve")
+async def resolve_alert(payload: AlertResolve):
+    if payload.id in ACTIVE_ALERTS:
+        ACTIVE_ALERTS.remove(payload.id)
+    # Add to cooldown
+    ALERT_COOLDOWNS[payload.id] = time.time()
+    
+    # Check if resolving biological threat
+    if payload.id.startswith("biological_threat"):
+        if SHARED_OVERRIDE.get("drama") == "biological":
+            SHARED_OVERRIDE["drama"] = None
+            print("🎬 Biological threat resolved, returned to baseline.")
+            
+    # Check if resolving resource depletion (refill tank)
+    if payload.id.startswith("resource_depletion"):
+        import mock_engine
+        mock_engine.SIM_STATE["tank_level"] = 85.0
+        if SHARED_OVERRIDE.get("drama") == "depletion":
+            SHARED_OVERRIDE["drama"] = None
+        print("🎬 Tank refilled, resource depletion resolved.")
+            
+    return {"status": "success"}
+
+class ControlPayload(BaseModel):
+    actuator: str | None = None
+    state: str | None = None
+    led_mode: str | None = None
+    autoMode: bool | None = None
+
+@app.post("/api/control")
+async def update_control(payload: ControlPayload):
+    if payload.autoMode is not None:
+        SHARED_OVERRIDE["autoMode"] = payload.autoMode
+    
+    if payload.actuator and payload.state:
+        # Check if this clears a mechanical failure
+        if payload.actuator == "fan" and SHARED_OVERRIDE.get("drama") == "failure":
+            SHARED_OVERRIDE["drama"] = None
+            print("🎬 Fan reset, mechanical failure resolved.")
+        elif payload.actuator == "mist" and SHARED_OVERRIDE.get("drama") == "breach":
+            SHARED_OVERRIDE["drama"] = None
+            print("🎬 Mist activated, environmental breach resolved.")
+            
+        SHARED_OVERRIDE[payload.actuator] = payload.state
+        
+    if payload.led_mode:
+        if payload.led_mode == "off" and SHARED_OVERRIDE.get("drama") == "breach":
+            SHARED_OVERRIDE["drama"] = None
+            print("🎬 LED reduced, environmental breach resolved.")
+            
+        SHARED_OVERRIDE["led_mode"] = payload.led_mode
+        
+    return {"status": "success", "override": SHARED_OVERRIDE}
+
+@app.get("/api/ai/recommend")
+async def get_ai_recommendation():
+    # Return a mocked recommendation for now (could be wired up to Groq later)
+    return {
+        "text": "Increase calcium by 10% and keep irrigation in short pulses for steadier uptake. Current EC levels suggest nutrient imbalance—consider adjusting phosphorus ratio.",
+        "confidence": 87,
+        "context": "Based on current sensor readings and crop profile"
+    }
 
 @app.post("/whatsapp")
 async def whatsapp_webhook(
@@ -111,7 +196,8 @@ async def websocket_endpoint(ws: WebSocket):
             sensors = payload["farm_telemetry"]["sensors"]
             LATEST_STATE["temp"], LATEST_STATE["ph"], LATEST_STATE["moisture"] = sensors["temperature_c"], sensors["ph_level"], sensors["moisture_pct"]
             await ws.send_json(payload)
-    except Exception: pass
+    except Exception as e:
+        print(f"🔌 WebSocket Disconnected: {e}")
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,148 +1,107 @@
 import { useEffect, useRef } from 'react'
 import { useFarmStore } from '../store/useFarmStore'
 
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
-
-const generateMockFrame = () => {
-  const state = useFarmStore.getState()
-  const { sensors, impact, actuators, autoMode } = state
-  
-  const temp = clamp(sensors.temp + (Math.random() - 0.5) * 1.2, 18, 34)
-  const humidity = clamp(sensors.humidity + (Math.random() - 0.5) * 4, 35, 92)
-  const moisture = clamp(sensors.moisture + (Math.random() - 0.5) * 5, 15, 88)
-  const ph = clamp(sensors.ph + (Math.random() - 0.5) * 0.08, 5.2, 7.4)
-  
-  let nextActuators = { ...actuators }
-  let actions = []
-
-  if (autoMode) {
-    const fan = temp > 26 || humidity > 80
-    const pump = moisture < 36
-    const mist = humidity < 50
-    const led = ph < 5.8 ? 'purple' : 'full'
-    
-    nextActuators = { fan, pump, mist, led }
-    actions = [
-      fan ? '🌡️ Temp drift detected → Fan activated' : '🌿 Climate within target band',
-      pump ? '💧 Moisture dipped below guardrail → Pump queued' : '💧 Root zone moisture stable',
-      led === 'purple' ? '🧪 pH alert mapped to purple LED state' : '💡 LED set for growth mode',
-    ]
-  }
-
-  useFarmStore.getState().updateData({
-    sensors: { temp, humidity, moisture, ph },
-    ...(autoMode ? { actuators: nextActuators } : {}),
-    actions,
-    impact: {
-      waterSaved: impact.waterSaved + (nextActuators.pump ? 0.8 : 0.15),
-      energySaved: impact.energySaved + (nextActuators.fan ? 0.2 : 0.45),
-      costSaved: impact.costSaved + 1.6,
-    },
-  })
-
-  const roll = Math.random()
-  if (roll > 0.78) {
-    // Diverse alert types to prevent duplicate messages
-    const alertTypes = [
-      { severity: 'critical' as const, type: 'ph_drift', message: `pH dropped to ${ph.toFixed(1)} — nutrient lockup risk`, actionRequired: true },
-      { severity: 'warning' as const, type: 'thermal_spike', message: 'Canopy temp exceeded 28°C. Increase airflow.', actionRequired: true },
-      { severity: 'warning' as const, type: 'humidity_high', message: 'Humidity above 85% — monitor for mold risk', actionRequired: true },
-      { severity: 'warning' as const, type: 'moisture_low', message: 'Root zone below 35%. Pump cycle queued.', actionRequired: true },
-      { severity: 'info' as const, type: 'ec_drift', message: 'EC trending upward. Watch for salt stress.', actionRequired: false },
-    ]
-    const alert = alertTypes[Math.floor(Math.random() * alertTypes.length)]
-    useFarmStore.getState().addAlert(alert)
-  }
-}
-
 export const useWebSocket = () => {
-  const updateData = useFarmStore((state) => state.updateData)
-  const addAlert = useFarmStore((state) => state.addAlert)
-  const fallbackStarted = useRef(false)
-  const fallbackTimer = useRef<number | null>(null)
+  const syncFromBackend = useFarmStore((state) => state.syncFromBackend)
+  const setConnectionStatus = useFarmStore((state) => state.setConnectionStatus)
 
   useEffect(() => {
     let active = true
     let ws: WebSocket | null = null
+    let reconnectTimer: number | null = null
+    let attemptCount = 0
+    const MAX_ATTEMPTS = 10
 
-    const startFallback = () => {
-      if (!active || fallbackStarted.current) {
-        return
-      }
+    const connect = () => {
+      if (!active) return
 
-      fallbackStarted.current = true
-      fallbackTimer.current = window.setInterval(generateMockFrame, 2800)
-    }
+      try {
+        ws = new WebSocket('ws://localhost:8000/ws')
 
-    try {
-      ws = new WebSocket('ws://localhost:8000/ws')
-
-      ws.onmessage = (event) => {
-        const raw = JSON.parse(event.data)
-        
-        // Handle both mock fallback and real backend formats
-        if (raw.farm_telemetry) {
-          const telemetry = raw.farm_telemetry
-          const sensors = telemetry.sensors
-          const actuators = telemetry.actuators
-          const autoMode = useFarmStore.getState().autoMode
-          
-          updateData({
-            sensors: {
-              temp: sensors.temperature_c,
-              humidity: sensors.humidity_pct,
-              moisture: sensors.moisture_pct,
-              ph: sensors.ph_level,
-            },
-            ...(autoMode ? {
-              actuators: {
-                fan: actuators.cooling_fan === 'on',
-                pump: actuators.water_pump === 'on',
-                mist: actuators.exhaust_fan === 'on', // Mapping exhaust to mist for demo
-                led: raw.led_mode || (actuators.led_intensity_pct > 0 ? 'full' : 'off'),
-              }
-            } : {}),
-            impact: {
-              waterSaved: raw.impact_metrics?.water_saved_liters,
-              energySaved: raw.impact_metrics?.energy_saved_kwh,
-              costSaved: raw.impact_metrics?.cost_saved_my_r,
-            },
-          })
-        } else if (raw.sensors && raw.actuators) {
-          const autoMode = useFarmStore.getState().autoMode
-          // Legacy/Fallback format
-          updateData({
-            sensors: raw.sensors,
-            ...(autoMode ? { actuators: raw.actuators } : {}),
-            actions: raw.actions,
-            impact: raw.impact,
-          })
+        ws.onopen = () => {
+          if (!active) return
+          setConnectionStatus('connected', 0)
+          attemptCount = 0
+          console.log('🔌 WebSocket Connected')
         }
 
-        if (raw.alerts?.length) {
-          raw.alerts.forEach((alert: any) => addAlert(alert))
+        ws.onmessage = (event) => {
+          if (!active) return
+          try {
+            const raw = JSON.parse(event.data)
+            
+            if (raw.message_type === 'state_update' && raw.farm_telemetry) {
+              const telemetry = raw.farm_telemetry
+              const sensors = telemetry.sensors
+              const actuators = telemetry.actuators
+              
+              syncFromBackend({
+                timestamp: raw.timestamp,
+                message_type: raw.message_type,
+                sensors: {
+                  temp: sensors.temperature_c,
+                  humidity: sensors.humidity_pct,
+                  moisture: sensors.moisture_pct,
+                  ph: sensors.ph_level,
+                  tankLevel: sensors.tank_level_pct,
+                },
+                actuators: {
+                  fan: actuators.cooling_fan === 'on',
+                  pump: actuators.water_pump === 'on',
+                  mist: actuators.exhaust_fan === 'on', 
+                  led: raw.led_mode || (actuators.led_intensity_pct > 0 ? 'full' : 'off'),
+                },
+                impact: {
+                  waterSaved: raw.impact_metrics?.water_saved_liters,
+                  energySaved: raw.impact_metrics?.energy_saved_kwh,
+                  costSaved: raw.impact_metrics?.cost_saved_my_r,
+                },
+                alerts: raw.alerts || []
+              })
+            }
+          } catch (e) {
+            console.warn('Failed to parse WebSocket message:', e)
+          }
         }
-      }
 
-      ws.onerror = () => {
-        console.warn('WS fallback to mock data')
-        startFallback()
-      }
+        ws.onclose = () => {
+          if (!active) return
+          console.warn('WebSocket disconnected. Attempting to reconnect...')
+          attemptReconnect()
+        }
 
-      ws.onclose = () => {
-        startFallback()
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error)
+          // onclose will fire next and handle the reconnect
+        }
+      } catch (e) {
+        console.error('Failed to create WebSocket:', e)
+        attemptReconnect()
       }
-    } catch {
-      startFallback()
     }
+
+    const attemptReconnect = () => {
+      if (attemptCount < MAX_ATTEMPTS) {
+        attemptCount++
+        setConnectionStatus('reconnecting', attemptCount)
+        reconnectTimer = window.setTimeout(connect, 5000)
+      } else {
+        setConnectionStatus('disconnected', attemptCount)
+        console.error('Max WebSocket reconnect attempts reached.')
+      }
+    }
+
+    // Initial connection
+    connect()
 
     return () => {
       active = false
-      ws?.close()
-
-      if (fallbackTimer.current !== null) {
-        window.clearInterval(fallbackTimer.current)
+      if (ws) {
+        ws.close()
+      }
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer)
       }
     }
-  }, [addAlert, updateData])
-}
+  }, [syncFromBackend, setConnectionStatus])
+}

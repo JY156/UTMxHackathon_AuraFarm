@@ -4,9 +4,8 @@ import { Settings2, X, AlertTriangle, ShieldCheck, RefreshCw, Command } from 'lu
 import { useFarmStore } from '../../../store/useFarmStore'
 
 function DemoController() {
-  const updateData = useFarmStore((state) => state.updateData)
-  const addAlert = useFarmStore((state) => state.addAlert)
   const resolveAlert = useFarmStore((state) => state.resolveAlert)
+  const addToast = useFarmStore((state) => state.addToast)
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -21,78 +20,24 @@ function DemoController() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const scenarioDepletion = () => {
-    updateData({
-      actions: ['💧 Warning: Water tank depleted. Auto-irrigation halted.'],
-    })
-    addAlert({
-      severity: 'critical',
-      type: 'resource_depletion',
-      message: 'Water reservoir empty. Manual refill required immediately.',
-      actionRequired: true,
-      target: 'tank',
-    })
+  const triggerScenario = async (type: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/demo/scenario?type=${type}`, { method: 'POST' })
+      const data = await response.json()
+      if (data.status !== 'scenario_queued') {
+        addToast(`Requested scenario: ${type.toUpperCase()}`, 'success')
+      }
+    } catch (err) {
+      addToast(`Failed to trigger scenario: ${type}`, 'error')
+    }
   }
 
-  const scenarioFailure = () => {
-    updateData({
-      sensors: { ...useFarmStore.getState().sensors, temp: 29.5 },
-      actuators:{ fan: false },
-      actions: ['⚡ Warning: Temperature rising despite fan activation.'],
-    })
-    addAlert({
-      severity: 'critical',
-      type: 'mechanical_failure',
-      message: 'Hardware failure: Fan 1 unresponsive. Check fuse or motor.',
-      actionRequired: true,
-      target: 'fan',
-    })
-  }
-
-  const scenarioBiological = () => {
-    updateData({
-      actions: ['🌿 Alert: CV scan detected potential biological threat on Rack 3.'],
-    })
-    addAlert({
-      severity: 'critical',
-      type: 'biological_threat',
-      message: 'Leaf Rust / Aphids detected. Quarantine and treat immediately.',
-      actionRequired: true,
-      target: 'rack',
-      rackId: 3,
-      shelf: 0,
-    })
-  }
-
-  const scenarioBreach = () => {
-    const current = useFarmStore.getState()
-    updateData({
-      sensors: {
-        temp: current.sensors.temp + 6.5,
-        humidity: current.sensors.humidity + 15,
-        moisture: current.sensors.moisture - 10,
-        ph: current.sensors.ph,
-      },
-      actuators: { fan: true, pump: true, mist: true, led: 'full' },
-      actions: ['🚨 Critical: Room ambient environment exceeded safety thresholds.'],
-    })
-    addAlert({
-      severity: 'critical',
-      type: 'environmental_breach',
-      message: 'HVAC failure: Temperature and humidity beyond hardware compensation limits.',
-      actionRequired: true,
-      target: 'environment',
-    })
-  }
-
-  const calm = () => {
-    updateData({
-      sensors: { temp: 23, humidity: 66, moisture: 51, ph: 6.1 },
-      actuators: { fan: false, pump: false, mist: false, led: 'full' },
-      actions: ['🧯 Demo reset → back to stable baseline'],
-      impact: useFarmStore.getState().impact,
-    })
-  }
+  const scenarioDepletion = () => triggerScenario('depletion')
+  const scenarioFailure = () => triggerScenario('failure')
+  const scenarioBiological = () => triggerScenario('biological')
+  const scenarioBreach = () => triggerScenario('breach')
+  
+  const calm = () => triggerScenario('normal')
 
   return (
     <AnimatePresence>

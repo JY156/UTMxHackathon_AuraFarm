@@ -21,6 +21,7 @@ class Sensors(BaseModel):
     ph_level: float
     ec_us_cm: float
     light_lux: float
+    tank_level_pct: float
 
 # ✅ NEW: Actuators model (unchanged)
 class Actuators(BaseModel):

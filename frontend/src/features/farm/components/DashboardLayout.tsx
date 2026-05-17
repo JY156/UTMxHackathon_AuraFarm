@@ -88,11 +88,13 @@ function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const container = useRef<HTMLDivElement>(null)
   
-  const { inspectedId, setInspectedId, alerts } = useFarmStore(
+  const { inspectedId, setInspectedId, alerts, sensors, actuators } = useFarmStore(
     useShallow((state) => ({
       inspectedId: state.inspectedId,
       setInspectedId: state.setInspectedId,
       alerts: state.alerts,
+      sensors: state.sensors,
+      actuators: state.actuators,
     })),
   )
 
@@ -114,6 +116,22 @@ function DashboardLayout() {
 
   return (
     <div ref={container} className="relative h-screen w-screen overflow-hidden bg-[#020617] text-slate-100 font-sans antialiased">
+      {!sensors || !actuators ? (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[#020617] text-slate-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-lg shadow-emerald-500/20">
+            <Zap size={24} className="text-white" fill="currentColor" />
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">Establishing API Link</p>
+          </div>
+        </div>
+      ) : (
+      <>
       {/* 🌌 BACKGROUND: The 3D World */}
       <div className="absolute inset-0 z-0">
         <FarmViewport />
@@ -293,6 +311,8 @@ function DashboardLayout() {
       <div className="hud-demo">
         <DemoController />
       </div>
+      </>
+      )}
     </div>
   )
 }

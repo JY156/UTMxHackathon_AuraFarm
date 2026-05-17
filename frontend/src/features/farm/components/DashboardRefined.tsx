@@ -177,6 +177,24 @@ function DashboardRefined() {
     { id: 'ai' as const, label: 'Config', icon: Bot },
   ]
 
+  if (!sensors || !actuators) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-6 bg-[#020617] text-slate-400">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-500 shadow-lg shadow-emerald-500/20">
+          <Zap size={24} className="text-white" fill="currentColor" />
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">Establishing API Link</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div ref={container} className="relative h-screen w-screen overflow-hidden bg-[#020617] text-slate-100 font-sans antialiased">
       {/* 🌌 BACKGROUND: The 3D World */}

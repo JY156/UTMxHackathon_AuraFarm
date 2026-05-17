@@ -28,6 +28,7 @@ export interface FarmTelemetryPayload {
       ph_level: number;         // pH | Range: 5.5-7.0 | Optimal: 6.0-6.5 ⭐ HERO METRIC
       ec_us_cm: number;         // μS/cm | Range: 800-1200 | Nutrient concentration
       light_lux: number;        // lux | Range: 12000-20000 | LED intensity
+      tank_level_pct: number;   // %  | Range: 0-100 | Reservoir level
     };
     
     /** Automated actuator states (driven by rule engine) */

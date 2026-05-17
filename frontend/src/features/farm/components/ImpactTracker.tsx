@@ -23,6 +23,19 @@ function ImpactTracker() {
   const impact = useFarmStore(useShallow((state) => state.impact))
   const baseline = { waterSaved: 12, energySaved: 9, costSaved: 48 }
 
+  if (!impact) {
+    return (
+      <section className="flex flex-col gap-4">
+        <div className="h-8 w-48 animate-pulse rounded bg-white/5" />
+        <div className="grid gap-6 sm:grid-cols-3">
+          <div className="h-48 animate-pulse rounded-[32px] bg-white/5" />
+          <div className="h-48 animate-pulse rounded-[32px] bg-white/5" />
+          <div className="h-48 animate-pulse rounded-[32px] bg-white/5" />
+        </div>
+      </section>
+    )
+  }
+
   const stats = [
     { label: 'Water Conservation', value: impact.waterSaved, baseline: baseline.waterSaved, unit: 'Liters', icon: Droplets, color: 'cyan', description: 'Reduction vs traditional soil' },
     { label: 'Energy Optimization', value: impact.energySaved, baseline: baseline.energySaved, unit: 'kWh', icon: Zap, color: 'amber', description: 'Smart lighting efficiency' },

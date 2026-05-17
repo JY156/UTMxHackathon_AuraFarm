@@ -33,6 +33,15 @@ function AIPanel() {
     void fetchAI()
   }, [])
 
+  if (!aiRec) {
+    return (
+      <section className="flex flex-col gap-6">
+        <div className="h-10 w-48 animate-pulse rounded bg-white/5" />
+        <div className="h-64 animate-pulse rounded-[32px] bg-white/5" />
+      </section>
+    )
+  }
+
   const timeAgo = aiRec.timestamp
     ? Math.round((Date.now() - aiRec.timestamp) / 1000) < 60
       ? 'just now'
