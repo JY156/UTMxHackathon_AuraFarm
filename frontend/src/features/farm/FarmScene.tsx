@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, Center, Text } from '@react-three/drei'
@@ -55,8 +55,8 @@ function CameraRig() {
 
   useEffect(() => {
     if (inspectedId === null) {
-      targetPos = new THREE.Vector3(-22.23, 5.66, 17.24)
-      targetLookAt = new THREE.Vector3(2.94, 0.74, 2.63)
+      targetPos = new THREE.Vector3(-20.46, 7.11, 20.78)
+      targetLookAt = new THREE.Vector3(3.78, 0.83, 5.14)
     }
   }, [inspectedId])
 
@@ -77,21 +77,6 @@ function CameraRig() {
   return null
 }
 
-function CameraLogger() {
-  const { camera, controls } = useThree()
-
-  useFrame(() => {
-    if (controls) {
-      const c = controls as any
-      // Open your browser console (F12) to see these values update live!
-      console.log(
-        `Pos: [${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}]`,
-        `Target: [${c.target.x.toFixed(2)}, ${c.target.y.toFixed(2)}, ${c.target.z.toFixed(2)}]`
-      )
-    }
-  })
-  return null
-}
 
 function SelectToFocus({ children, id }: { children: React.ReactNode, id: string }) {
   const setInspectedId = useFarmStore((s) => s.setInspectedId)
@@ -253,10 +238,9 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
     <Canvas
       shadows
       // 1. WIDER CAMERA: Increased FOV from 45 to 60 and moved position back to 18
-      camera={{ position: [-22.23, 5.66, 17.24], fov: 30 }}
+      camera={{ position: [-20.46, 7.11, 20.78], fov: 30 }}
     >
       <CameraRig />
-      <CameraLogger />
 
       {/* 2. BACKGROUND COLOR: A deep tech-blue or clean white/grey works best */}
       <color attach="background" args={[bgColor]} />
@@ -377,7 +361,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
                   <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -0.72]} end={[-0.4, 2.0, -1.25]} color="#10b981" radius={0.015} flow={actuators.valveN} />
                 </group>
               </SelectToFocus>
-              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{curveRadius: -0.31}}>NITROGEN (N)</Text>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>NITROGEN (N)</Text>
             </group>
             {/* Phosphorus - Yellow */}
             <group position={[0, 0, 0.8]}>
@@ -388,7 +372,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
                   <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.12]} end={[-0.4, 2.0, -2.15]} color="#f59e0b" radius={0.015} flow={actuators.valveP} />
                 </group>
               </SelectToFocus>
-              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{curveRadius: -0.31}}>PHOSPHORUS (P)</Text>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>PHOSPHORUS (P)</Text>
             </group>
             {/* Potassium - Purple */}
             <group position={[0, 0, 1.6]}>
@@ -399,7 +383,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
                   <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.52]} end={[-0.4, 2.0, -2.85]} color="#8b5cf6" radius={0.015} flow={actuators.valveK} />
                 </group>
               </SelectToFocus>
-              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{curveRadius: -0.31}}>POTASSIUM (K)</Text>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>POTASSIUM (K)</Text>
             </group>
             {/* Acidic - Red */}
             <group position={[0, 0, 2.4]}>
@@ -410,7 +394,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
                   <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.92]} end={[-0.4, 2.0, -3.65]} color="#ef4444" radius={0.015} flow={actuators.valveAcidic} />
                 </group>
               </SelectToFocus>
-              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{curveRadius: -0.31}}>ACID</Text>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>ACID</Text>
             </group>
             {/* Alkaline - Cyan */}
             <group position={[0, 0, 3.2]}>
@@ -421,7 +405,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
                   <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -2.32]} end={[-0.4, 2.0, -4.45]} color="#0ea5e9" radius={0.015} flow={actuators.valveAlkaline} />
                 </group>
               </SelectToFocus>
-              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{curveRadius: -0.31}}>ALKALINE</Text>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>ALKALINE</Text>
             </group>
           </group>
 
@@ -434,7 +418,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       {/* 5. WIDER CONTROLS: Increased maxDistance so you can zoom out further */}
       <OrbitControls
         makeDefault
-        target={[2.94, 0.74, 2.63]}
+        target={[3.78, 0.83, 5.14]}
         minDistance={2}
         maxDistance={40}
         maxPolarAngle={Math.PI / 2.1}
