@@ -6,7 +6,7 @@ if sys.stdout.encoding.lower() != 'utf-8':
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
+from typing import Any, List
 import io
 import google.generativeai as genai
 from PIL import Image
@@ -44,6 +44,13 @@ if not twilio_client: print("⚠️ TWILIO credentials missing")
 else: print("✅ All systems initialized.")
 
 app = FastAPI(title="AuraFarm Backend")
+
+PLANT_PROFILE_PATH = os.path.join(os.path.dirname(__file__), "plant_profiles.json")
+
+
+def load_plant_profiles() -> dict[str, Any]:
+    with open(PLANT_PROFILE_PATH, "r", encoding="utf-8") as file:
+        return json.load(file)
 
 # Allow Frontend to Connect
 app.add_middleware(
@@ -142,10 +149,28 @@ class CropProfile(BaseModel):
 @app.get("/api/profiles", response_model=List[CropProfile])
 async def get_crop_profiles():
     """Returns optimal growing parameters for different crops"""
+    profiles = load_plant_profiles()
     return [
-        {"id": "lettuce", "name": "Butterhead Lettuce", "optimal_ph": [5.8, 6.2], "optimal_temp": [18.0, 22.0]},
-        {"id": "basil", "name": "Sweet Basil", "optimal_ph": [6.0, 6.5], "optimal_temp": [22.0, 28.0]}
+        {
+            "id": profile_id,
+            "name": profile["name"],
+            "optimal_ph": [
+                profile["summary"]["ideal_conditions"]["ph_level"]["min"],
+                profile["summary"]["ideal_conditions"]["ph_level"]["max"],
+            ],
+            "optimal_temp": [
+                profile["summary"]["ideal_conditions"]["temperature_c"]["min"],
+                profile["summary"]["ideal_conditions"]["temperature_c"]["max"],
+            ],
+        }
+        for profile_id, profile in profiles.items()
     ]
+
+
+@app.get("/api/profiles/full")
+async def get_full_crop_profiles():
+    """Returns the stage-by-stage crop truth tables used by the backend and AI."""
+    return load_plant_profiles()
 
 @app.post("/api/vision/analyze")
 async def analyze_plant_vision(file: UploadFile = File(...)):

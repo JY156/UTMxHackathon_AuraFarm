@@ -112,10 +112,25 @@ export interface FarmState {
 
 const createId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
 
+const demoSensors: FarmSensors = {
+  temp: 24.3,
+  humidity: 65.2,
+  moisture: 48.1,
+  ph: 6.18,
+  tankLevel: 85,
+}
+
+const demoActuators: FarmActuators = {
+  fan: false,
+  pump: true,
+  mist: true,
+  led: 'full',
+}
+
 export const useFarmStore = create<FarmState>((set, get) => ({
-  // Backend State Initialized to null/empty
-  sensors: null,
-  actuators: null,
+  // Seed with a live-demo baseline so the dashboard renders before the backend connects.
+  sensors: demoSensors,
+  actuators: demoActuators,
   automationLog: [],
   alerts: [],
   impact: null,
