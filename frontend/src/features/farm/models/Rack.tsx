@@ -1,3 +1,4 @@
+import type { GroupProps } from '@react-three/fiber';
 import * as THREE from 'three'
 import React from 'react'
 import { useGLTF } from '@react-three/drei'
@@ -13,7 +14,7 @@ type GLTFResult = GLTF & {
 }
 
 // 1. Changed function name from 'Model' to 'Rack'
-export function Rack(props: JSX.IntrinsicElements['group']) {
+export function Rack(props: GroupProps) {
   const { nodes, materials } = useGLTF('/models/rack/rack.glb') as GLTFResult
   
   // 🌟 Add this line here! 

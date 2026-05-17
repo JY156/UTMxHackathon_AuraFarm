@@ -1,6 +1,7 @@
+import type { GroupProps } from '@react-three/fiber';
 import * as THREE from 'three'
 
-export function DosingTank({ color, ...props }: { color: string } & JSX.IntrinsicElements['group']) {
+export function DosingTank({ color, ...props }: { color: string } & GroupProps) {
   return (
     <group {...props}>
       {/* Tank Body */}

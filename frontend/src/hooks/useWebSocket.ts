@@ -50,6 +50,11 @@ export const useWebSocket = () => {
                   pump: actuators.water_pump === 'on',
                   mist: actuators.exhaust_fan === 'on', 
                   led: raw.led_mode || (actuators.led_intensity_pct > 0 ? 'full' : 'off'),
+                  valveN: false,
+                  valveP: false,
+                  valveK: false,
+                  valveAcidic: false,
+                  valveAlkaline: false,
                 },
                 impact: {
                   waterSaved: raw.impact_metrics?.water_saved_liters,

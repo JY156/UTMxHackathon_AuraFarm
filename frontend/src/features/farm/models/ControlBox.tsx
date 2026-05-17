@@ -1,4 +1,5 @@
-export function ControlBox(props: JSX.IntrinsicElements['group']) {
+import type { GroupProps } from '@react-three/fiber';
+export function ControlBox(props: GroupProps) {
   return (
     <group {...props}>
       {/* The Main Metal Box */}

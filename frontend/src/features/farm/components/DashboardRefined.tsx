@@ -265,7 +265,7 @@ function DashboardRefined() {
           
           {/* NAV SIDEBAR */}
           <div className="hud-nav group/nav flex flex-col gap-4 pointer-events-auto">
-            <nav className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-black/40 p-1.5 backdrop-blur-2xl transition-all duration-300 hover:w-40 w-[60px] overflow-hidden">
+            <nav className="flex flex-col gap-1 rounded-2xl border border-white/10 bg-black/80 p-1.5 backdrop-blur-2xl transition-all duration-300 hover:w-40 w-[60px] overflow-hidden">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 const isActive = activeTab === tab.id
@@ -308,7 +308,7 @@ function DashboardRefined() {
                   className="hud-right w-80 pointer-events-auto flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1"
                 >
                   {/* Status Summary (Always there) */}
-                  <div className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-xl">
+                  <div className="rounded-2xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
                     <div className="flex items-center gap-2 mb-3">
                       <Info size={14} className="text-emerald-400" />
                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Node Status</span>
@@ -346,7 +346,7 @@ function DashboardRefined() {
                         className="flex flex-col gap-4"
                       >
                          {/* Compact Sensors */}
-                        <div className="rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-xl">
+                        <div className="rounded-2xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Environment</span>
                             <Zap size={12} className="text-amber-400" />

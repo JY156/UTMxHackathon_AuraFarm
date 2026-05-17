@@ -1,3 +1,4 @@
+import type { GroupProps } from '@react-three/fiber';
 import * as THREE from 'three'
 import React, { useRef } from 'react'
 import { useGLTF, Center } from '@react-three/drei'
@@ -14,7 +15,7 @@ type GLTFResult = GLTF & {
   }
 }
 
-export function Tank(props: JSX.IntrinsicElements['group']) {
+export function Tank(props: GroupProps) {
   const { nodes, materials } = useGLTF('/models/tank/scene-transformed.glb') as GLTFResult
   
   // Read tank level (0-100) from Zustand store

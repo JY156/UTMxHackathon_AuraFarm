@@ -14,7 +14,7 @@ export function Fan({ active = true, ...props }: JSX.IntrinsicElements['group'] 
   useFrame((state, delta) => {
     if (propellerRef.current && fan) {
       // Multiply by a higher number (e.g., 20) for faster speed factor
-      propellerRef.current.rotation.z += delta * 15 
+      propellerRef.current.rotation.z += delta * 15
     }
   })
 
@@ -29,13 +29,13 @@ export function Fan({ active = true, ...props }: JSX.IntrinsicElements['group'] 
         <group name="fan_casing">
           {/* Inner Circular Shroud */}
           <mesh position={[0, 0, 0]}>
-          {/* args: [radius, tubeThickness, radialSegments, tubularSegments] 
+            {/* args: [radius, tubeThickness, radialSegments, tubularSegments] 
             radius: 0.6
             tubeThickness: 0.08 (increase this to make the wall "chunkier")
           */}
-          <torusGeometry args={[0.6, 0.08, 16, 32]} />
-          {casingMaterial}
-        </mesh>
+            <torusGeometry args={[0.6, 0.08, 16, 32]} />
+            {casingMaterial}
+          </mesh>
         </group>
 
         {/* --- ROTATING PART: The Blades & Hub (Attach the ref!) --- */}
