@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircle2, Info, X } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFarmStore } from '../../../store/useFarmStore'
 
 export default function ToastSystem() {
@@ -19,10 +19,17 @@ export default function ToastSystem() {
 }
 
 function ToastItem({ toast, onRemove }: { toast: any; onRemove: () => void }) {
+  const onRemoveRef = useRef(onRemove)
   useEffect(() => {
-    const timer = setTimeout(onRemove, 4000)
+    onRemoveRef.current = onRemove
+  })
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onRemoveRef.current()
+    }, 4000)
     return () => clearTimeout(timer)
-  }, [onRemove])
+  }, [])
 
   const isSuccess = toast.type === 'success'
 
