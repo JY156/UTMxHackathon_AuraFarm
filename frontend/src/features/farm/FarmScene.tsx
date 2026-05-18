@@ -1,7 +1,7 @@
-import { memo, useState, useEffect } from 'react'
+import { memo, useState, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, Center } from '@react-three/drei'
+import { OrbitControls, Environment, Center, Text } from '@react-three/drei'
 import { Selection, Select, EffectComposer, Outline } from '@react-three/postprocessing'
 import { useFarmStore } from '../../store/useFarmStore'
 import type { Alert, FarmActuators, FarmProfile, FarmSensors } from '../../store/useFarmStore'
@@ -11,7 +11,9 @@ import { Rack } from './models/Rack'
 import { Led } from './models/Led'
 import { Fan } from './models/Fan'
 import { Tank } from './models/Tank'
+import { DosingTank } from './models/DosingTank'
 import { Pump } from './models/Pump'
+import { MiniPump } from './models/MiniPump'
 import { ControlBox } from './models/ControlBox'
 import { SensorNode } from './models/SensorNode'
 import { Cable } from './models/Cable'
@@ -53,8 +55,8 @@ function CameraRig() {
 
   useEffect(() => {
     if (inspectedId === null) {
-      targetPos = new THREE.Vector3(-22.23, 5.66, 17.24)
-      targetLookAt = new THREE.Vector3(2.94, 0.74, 2.63)
+      targetPos = new THREE.Vector3(-20.46, 7.11, 20.78)
+      targetLookAt = new THREE.Vector3(3.78, 0.83, 5.14)
     }
   }, [inspectedId])
 
@@ -75,21 +77,6 @@ function CameraRig() {
   return null
 }
 
-function CameraLogger() {
-  const { camera, controls } = useThree()
-
-  useFrame(() => {
-    if (controls) {
-      const c = controls as any
-      // Open your browser console (F12) to see these values update live!
-      console.log(
-        `Pos: [${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}]`,
-        `Target: [${c.target.x.toFixed(2)}, ${c.target.y.toFixed(2)}, ${c.target.z.toFixed(2)}]`
-      )
-    }
-  })
-  return null
-}
 
 function SelectToFocus({ children, id }: { children: React.ReactNode, id: string }) {
   const setInspectedId = useFarmStore((s) => s.setInspectedId)
@@ -251,10 +238,9 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
     <Canvas
       shadows
       // 1. WIDER CAMERA: Increased FOV from 45 to 60 and moved position back to 18
-      camera={{ position: [-22.23, 5.66, 17.24], fov: 30 }}
+      camera={{ position: [-20.46, 7.11, 20.78], fov: 30 }}
     >
       <CameraRig />
-      <CameraLogger />
 
       {/* 2. BACKGROUND COLOR: A deep tech-blue or clean white/grey works best */}
       <color attach="background" args={[bgColor]} />
@@ -318,7 +304,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           }
 
           <SelectToFocus id="tank">
-            <group position={[1.25, 0, 7.5]}>
+            <group position={[1.25, 0, 8]}>
               <Tank scale={70} />
               {tankAlert && <AlertMarker position={[0, 2.5, 0]} />}
             </group>
@@ -343,7 +329,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           {/* Pipe 1: Straight connection */}
           <Cable
             start={[1.6, 0.23, 6]}
-            end={[1.6, 0.23, 7.5]}
+            end={[1.6, 0.23, 8]}
             color="#cbd5e1"
             radius={0.06}
             flow={actuators.pump}
@@ -362,6 +348,67 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           {/* Humidity Mist effect */}
           <HumidityMist active={actuators.mist} position={[0, 0, 3]} />
 
+          {/* NPK + pH Dosing Tanks */}
+          {/* NPK + pH Dosing Tanks */}
+          {/* Positioned in a line against the right wall */}
+          <group position={[1.7, 0, 9.25]}>
+            {/* Nitrogen - Green */}
+            <group position={[0, 0, 0]}>
+              <SelectToFocus id="tank-n">
+                <group>
+                  <DosingTank color="#10b981" />
+                  <MiniPump color="#10b981" active={actuators.valveN} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -0.72]} end={[-0.4, 2.0, -1.25]} color="#10b981" radius={0.015} flow={actuators.valveN} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>NITROGEN (N)</Text>
+            </group>
+            {/* Phosphorus - Yellow */}
+            <group position={[0, 0, 0.8]}>
+              <SelectToFocus id="tank-p">
+                <group>
+                  <DosingTank color="#f59e0b" />
+                  <MiniPump color="#f59e0b" active={actuators.valveP} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.12]} end={[-0.4, 2.0, -2.15]} color="#f59e0b" radius={0.015} flow={actuators.valveP} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>PHOSPHORUS (P)</Text>
+            </group>
+            {/* Potassium - Purple */}
+            <group position={[0, 0, 1.6]}>
+              <SelectToFocus id="tank-k">
+                <group>
+                  <DosingTank color="#8b5cf6" />
+                  <MiniPump color="#8b5cf6" active={actuators.valveK} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.52]} end={[-0.4, 2.0, -2.85]} color="#8b5cf6" radius={0.015} flow={actuators.valveK} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>POTASSIUM (K)</Text>
+            </group>
+            {/* Acidic - Red */}
+            <group position={[0, 0, 2.4]}>
+              <SelectToFocus id="tank-acidic">
+                <group>
+                  <DosingTank color="#ef4444" />
+                  <MiniPump color="#ef4444" active={actuators.valveAcidic} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.92]} end={[-0.4, 2.0, -3.65]} color="#ef4444" radius={0.015} flow={actuators.valveAcidic} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>ACID</Text>
+            </group>
+            {/* Alkaline - Cyan */}
+            <group position={[0, 0, 3.2]}>
+              <SelectToFocus id="tank-alkaline">
+                <group>
+                  <DosingTank color="#0ea5e9" />
+                  <MiniPump color="#0ea5e9" active={actuators.valveAlkaline} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -2.32]} end={[-0.4, 2.0, -4.45]} color="#0ea5e9" radius={0.015} flow={actuators.valveAlkaline} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>ALKALINE</Text>
+            </group>
+          </group>
+
           <SelectToFocus id="control-box">
             <ControlBox position={[1.9, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />
           </SelectToFocus>
@@ -371,7 +418,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       {/* 5. WIDER CONTROLS: Increased maxDistance so you can zoom out further */}
       <OrbitControls
         makeDefault
-        target={[2.94, 0.74, 2.63]}
+        target={[3.78, 0.83, 5.14]}
         minDistance={2}
         maxDistance={40}
         maxPolarAngle={Math.PI / 2.1}

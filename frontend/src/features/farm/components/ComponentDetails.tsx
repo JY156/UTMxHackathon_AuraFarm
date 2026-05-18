@@ -19,9 +19,20 @@ export default function ComponentDetails() {
   const isRack = inspectedId.startsWith('rack-')
   const rackNumber = isRack ? parseInt(inspectedId.split('-')[1]) : null
   const isTank = inspectedId === 'tank'
+  const isDosingTank = inspectedId.startsWith('tank-')
   const isPump = inspectedId === 'pump'
   const isFan = inspectedId === 'fan'
   const isControlBox = inspectedId === 'control-box'
+
+  const getTitle = () => {
+    if (inspectedId === 'tank-n') return 'Nitrogen (N) Tank'
+    if (inspectedId === 'tank-p') return 'Phosphorus (P) Tank'
+    if (inspectedId === 'tank-k') return 'Potassium (K) Tank'
+    if (inspectedId === 'tank-acidic') return 'Acid Tank'
+    if (inspectedId === 'tank-alkaline') return 'Alkaline Tank'
+    if (isRack) return `Grow Rack ${rackNumber}`
+    return inspectedId.replace('-', ' ')
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,7 +42,7 @@ export default function ComponentDetails() {
           {(isTank || isPump) && <Droplet className="h-6 w-6" />}
           {isFan && <Wind className="h-6 w-6" />}
           {isControlBox && <Cpu className="h-6 w-6" />}
-          {inspectedId.replace('-', ' ')} DETAILS
+          {getTitle()} DETAILS
         </h2>
 
         {/* ... (Rack/Tank/Fan/ControlBox logic) */}
@@ -70,6 +81,26 @@ export default function ComponentDetails() {
                 <span className="font-medium">Resource Depletion Alert</span>
               </div>
             )}
+          </div>
+        )}
+
+        {isDosingTank && (
+          <div className="grid gap-4">
+            <DetailRow icon={<Droplet />} label="Chemical/Nutrient Level" value="85.0%" />
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+              <div 
+                className={`h-full transition-all duration-1000 bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]`}
+                style={{ width: `85%` }} 
+              />
+            </div>
+            <DetailRow icon={<Activity />} label="Dosing Valve" value={
+              (inspectedId === 'tank-n' && actuators.valveN) ||
+              (inspectedId === 'tank-p' && actuators.valveP) ||
+              (inspectedId === 'tank-k' && actuators.valveK) ||
+              (inspectedId === 'tank-acidic' && actuators.valveAcidic) ||
+              (inspectedId === 'tank-alkaline' && actuators.valveAlkaline)
+                ? 'OPEN (Dosing)' : 'CLOSED'
+            } />
           </div>
         )}
 

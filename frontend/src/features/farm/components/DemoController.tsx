@@ -112,6 +112,19 @@ function DemoController() {
               </button>
 
               <button
+                onClick={() => useFarmStore.getState().triggerLocalPHDrop()}
+                className="group relative flex items-center justify-between rounded-2xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-4 transition-all hover:bg-indigo-500/10"
+              >
+                <div className="flex items-center gap-3">
+                  <AlertTriangle size={18} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-bold text-indigo-100">pH Drop</span>
+                    <span className="text-[10px] text-indigo-400/70">Auto-fix Demo</span>
+                  </div>
+                </div>
+              </button>
+
+              <button
                 onClick={scenarioBreach}
                 className="group relative flex items-center justify-between rounded-2xl border border-rose-500/20 bg-rose-500/5 px-4 py-4 transition-all hover:bg-rose-500/10"
               >

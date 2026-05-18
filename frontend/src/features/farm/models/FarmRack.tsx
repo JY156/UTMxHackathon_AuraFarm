@@ -13,7 +13,7 @@ export function FarmRack({ sensors, actuators, alerts, profile }: FarmSceneProps
       return
     }
 
-    rackRef.current.rotation.y += actuators.fan ? 0.0025 : 0.0008
+    rackRef.current.rotation.y += actuators?.fan ? 0.0025 : 0.0008
     rackRef.current.position.y = Math.sin(performance.now() * 0.0012) * 0.03
   })
 
@@ -32,8 +32,8 @@ export function FarmRack({ sensors, actuators, alerts, profile }: FarmSceneProps
       <mesh position={[0, 2.35, 0]}>
         <boxGeometry args={[2.85, 0.25, 1]} />
         <meshStandardMaterial
-          color={actuators.led === 'red' ? '#7f1d1d' : '#14532d'}
-          emissive={actuators.led === 'red' ? '#ef4444' : '#22c55e'}
+          color={actuators?.led === 'red' ? '#7f1d1d' : '#14532d'}
+          emissive={actuators?.led === 'red' ? '#ef4444' : '#22c55e'}
           emissiveIntensity={0.3}
           roughness={0.2}
         />
@@ -41,7 +41,7 @@ export function FarmRack({ sensors, actuators, alerts, profile }: FarmSceneProps
 
       <mesh position={[-1.1, 1.25, 0]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.28, 0.28, 0.8, 20]} />
-        <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={actuators.fan ? 0.8 : 0.15} />
+        <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={actuators?.fan ? 0.8 : 0.15} />
       </mesh>
 
       <mesh position={[1.1, 1.25, 0]}>

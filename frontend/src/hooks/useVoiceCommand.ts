@@ -6,33 +6,42 @@ export const useVoiceCommand = () => {
   const [transcript, setTranscript] = useState('')
   const recognitionRef = useRef<any>(null)
   
-  const { toggleActuator, setLedMode, actuators } = useFarmStore()
+  const { toggleActuator, setLedMode, actuators, addToast } = useFarmStore()
 
   const handleCommand = useCallback((text: string) => {
     const cmd = text.toLowerCase()
     console.log('Voice Command Received:', cmd)
 
     // Fan / Ventilation
-    if (cmd.includes('fan') || cmd.includes('ventilation')) {
-      const target = cmd.includes('on')
-      if (actuators.fan !== target) {
-        useFarmStore.getState().toggleActuator('fan')
+    const fanMatch = cmd.match(/(fan|ventilation).*(on|off|start|stop)/i)
+    if (fanMatch) {
+      const target = ['on', 'start'].includes(fanMatch[2].toLowerCase())
+      if (actuators?.fan !== target) {
+        toggleActuator('fan')
+        addToast(`Voice Command: Fan turned ${target ? 'ON' : 'OFF'}`, 'success')
+        return
       }
     }
 
     // Pump / Irrigation
-    if (cmd.includes('pump') || cmd.includes('irrigation')) {
-      const target = cmd.includes('on')
-      if (actuators.pump !== target) {
-        useFarmStore.getState().toggleActuator('pump')
+    const pumpMatch = cmd.match(/(pump|irrigation|water).*(on|off|start|stop)/i)
+    if (pumpMatch) {
+      const target = ['on', 'start'].includes(pumpMatch[2].toLowerCase())
+      if (actuators?.pump !== target) {
+        toggleActuator('pump')
+        addToast(`Voice Command: Pump turned ${target ? 'ON' : 'OFF'}`, 'success')
+        return
       }
     }
 
     // Mist
-    if (cmd.includes('mist')) {
-      const target = cmd.includes('on')
-      if (actuators.mist !== target) {
-        useFarmStore.getState().toggleActuator('mist')
+    const mistMatch = cmd.match(/(mist|misting|humidity).*(on|off|start|stop)/i)
+    if (mistMatch) {
+      const target = ['on', 'start'].includes(mistMatch[2].toLowerCase())
+      if (actuators?.mist !== target) {
+        toggleActuator('mist')
+        addToast(`Voice Command: Misting turned ${target ? 'ON' : 'OFF'}`, 'success')
+        return
       }
     }
 
