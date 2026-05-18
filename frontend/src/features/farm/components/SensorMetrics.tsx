@@ -118,6 +118,8 @@ function SensorMetrics() {
     useShallow((state) => ({ sensors: state.sensors, profile: state.profile, cvData: state.cvData })),
   )
 
+  if (!sensors) return null
+
   const optimal = profile?.optimal ?? {
     temp: [21, 27],
     humidity: [55, 75],

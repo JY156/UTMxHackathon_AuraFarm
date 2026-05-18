@@ -6,12 +6,12 @@ export type LedMode = 'full' | 'purple' | 'off'
 
 export interface Alert {
   id: string
-  severity: Severity
+  severity: 'info' | 'warning' | 'critical'  // Must match Severity enum
   type: string
   message: string
   actionRequired: boolean
   resolved: boolean
-  timestamp: number
+  timestamp: number  // Unix epoch ms
   target?: 'rack' | 'tank' | 'fan' | 'environment'
   rackId?: number
   shelf?: number
@@ -75,6 +75,7 @@ export interface WebSocketPayload {
   alerts?: Alert[]
   impact?: FarmImpact
   aiRec?: AIRecommendation
+  cv_data?: any
 }
 
 export interface Toast {
@@ -106,7 +107,7 @@ export interface FarmState {
   impact: FarmImpact | null
   aiRec: AIRecommendation | null
   history: FarmHistoryPoint[]
-  
+
   // UI-only State
   autoMode: boolean
   toasts: Toast[]
@@ -147,9 +148,14 @@ const demoActuators: FarmActuators = {
   pump: true,
   mist: true,
   led: 'full',
+  valveN: false,
+  valveP: false,
+  valveK: false,
+  valveAcidic: false,
+  valveAlkaline: false,
 }
 
-export const useFarmStore = create<FarmState>((set, get) => ({
+export const useFarmStore = create<FarmState>((set) => ({
   // Seed with a live-demo baseline so the dashboard renders before the backend connects.
   sensors: demoSensors,
   actuators: demoActuators,
@@ -174,7 +180,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   connectionStatus: 'disconnected',
   connectionAttempts: 0,
   cvData: {
-    crop_type: "cabbage",
+    crop_type: "lettuce",
     overall_health: "healthy",
     diseases_detected: [],
     nutrient_deficiencies: {
@@ -188,12 +194,18 @@ export const useFarmStore = create<FarmState>((set, get) => ({
 
   syncFromBackend: (payload) =>
     set((state) => {
+      console.log('📥 Received payload:', {
+        hasAlerts: payload.alerts?.length > 0,
+        alertTypes: payload.alerts?.map(a => a.type),
+        cvData: payload.cv_data?.overall_health
+      })
       // Defensive parsing: keep previous value if payload field is missing
       const nextSensors = payload.sensors || state.sensors
       const nextActuators = payload.actuators || state.actuators
       const nextImpact = payload.impact || state.impact
       const newActions = payload.actions || []
-      
+      const nextCvData = (payload as any).cv_data || state.cvData
+
       const newHistory = nextSensors ? [
         ...state.history,
         {
@@ -205,46 +217,46 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       // Handle alerts merging
       let nextAlerts = state.alerts
       if (payload.alerts && Array.isArray(payload.alerts)) {
-          const existingIds = new Set(state.alerts.map(a => a.id))
-          const newAlerts = payload.alerts.filter(a => !existingIds.has(a.id)).map(a => ({
-            ...a,
-            id: a.id || createId(),
-            resolved: false,
-            timestamp: Date.now()
-          }))
-          
-          // Trigger TTS for new critical alerts
-          newAlerts.forEach(alert => {
-            if (alert.severity === 'critical' && typeof window !== 'undefined' && window.speechSynthesis) {
-              try {
-                let speechText = `Critical alert: ${alert.message}`
-                if (alert.type === 'resource_depletion') {
-                  speechText = 'Critical alert: water tank empty.'
-                } else if (alert.type === 'mechanical_failure') {
-                  speechText = 'Critical alert: fan is broken, requires manual fix now.'
-                } else if (alert.type === 'biological_threat') {
-                  speechText = `Critical alert: detected leaf rust on rack ${alert.rackId || 3}, remove the plant now before disease spread.`
-                }
-        
-                const utterance = new SpeechSynthesisUtterance(speechText)
-                utterance.rate = 0.8 
-                utterance.pitch = 0.9
-        
-                const voices = window.speechSynthesis.getVoices()
-                const myVoice = voices.find(v => v.lang === 'en-MY' || v.lang === 'ms-MY') || 
-                                voices.find(v => v.name.toLowerCase().includes('malaysia') || v.name.toLowerCase().includes('melayu'))
-                
-                if (myVoice) utterance.voice = myVoice
-        
-                window.speechSynthesis.cancel()
-                window.speechSynthesis.speak(utterance)
-              } catch (err) {
-                console.warn('TTS announcement failed', err)
+        const existingIds = new Set(state.alerts.map(a => a.id))
+        const newAlerts = payload.alerts.filter(a => !existingIds.has(a.id)).map(a => ({
+          ...a,
+          id: a.id || createId(),
+          resolved: false,
+          timestamp: Date.now()
+        }))
+
+        // Trigger TTS for new critical alerts
+        newAlerts.forEach(alert => {
+          if (alert.severity === 'critical' && typeof window !== 'undefined' && window.speechSynthesis) {
+            try {
+              let speechText = `Critical alert: ${alert.message}`
+              if (alert.type === 'resource_depletion') {
+                speechText = 'Critical alert: water tank empty.'
+              } else if (alert.type === 'mechanical_failure') {
+                speechText = 'Critical alert: fan is broken, requires manual fix now.'
+              } else if (alert.type === 'biological_threat') {
+                speechText = `Critical alert: detected leaf rust on rack ${alert.rackId || 3}, remove the plant now before disease spread.`
               }
+
+              const utterance = new SpeechSynthesisUtterance(speechText)
+              utterance.rate = 0.8
+              utterance.pitch = 0.9
+
+              const voices = window.speechSynthesis.getVoices()
+              const myVoice = voices.find(v => v.lang === 'en-MY' || v.lang === 'ms-MY') ||
+                voices.find(v => v.name.toLowerCase().includes('malaysia') || v.name.toLowerCase().includes('melayu'))
+
+              if (myVoice) utterance.voice = myVoice
+
+              window.speechSynthesis.cancel()
+              window.speechSynthesis.speak(utterance)
+            } catch (err) {
+              console.warn('TTS announcement failed', err)
             }
-          })
-          
-          nextAlerts = [...state.alerts, ...newAlerts]
+          }
+        })
+
+        nextAlerts = [...state.alerts, ...newAlerts]
       }
 
       // Handle server-issued actions
@@ -252,7 +264,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
         payload.actions.forEach(action => {
           if (typeof action === 'string' && action.startsWith('RESOLVE_ALERT:')) {
             const idToResolve = action.split(':')[1]
-            nextAlerts = nextAlerts.map(alert => 
+            nextAlerts = nextAlerts.map(alert =>
               alert.id === idToResolve ? { ...alert, resolved: true } : alert
             )
           }
@@ -264,9 +276,10 @@ export const useFarmStore = create<FarmState>((set, get) => ({
         actuators: nextActuators,
         impact: nextImpact,
         history: newHistory,
-        automationLog: newActions.length > 0 
-            ? [...state.automationLog, ...newActions].slice(-5) 
-            : state.automationLog,
+        cvData: nextCvData,
+        automationLog: newActions.length > 0
+          ? [...state.automationLog, ...newActions].slice(-5)
+          : state.automationLog,
         alerts: nextAlerts
       }
     }),
@@ -277,15 +290,15 @@ export const useFarmStore = create<FarmState>((set, get) => ({
     set((state) => {
       // Optimistic UI update. Real sync logic should send POST to backend.
       if (!state.actuators) return state
-      
+
       const newVal = !state.actuators[actuator]
-      
+
       fetch('http://localhost:8000/api/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actuator, state: newVal ? 'on' : 'off', autoMode: false })
       }).catch(console.error)
-      
+
       return {
         actuators: { ...state.actuators, [actuator]: newVal },
         autoMode: false,
@@ -342,7 +355,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       if (!alertToResolve) return state
 
       const message = `${alertToResolve.type.replace('_', ' ').toUpperCase()} RESOLVED`
-      
+
       return {
         alerts: state.alerts.map((alert) =>
           alert.id === id ? { ...alert, resolved: true } : alert,
@@ -352,7 +365,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
     })
   },
 
-  addToast: (message, type = 'info') => 
+  addToast: (message, type = 'info') =>
     set((state) => ({
       toasts: [...state.toasts, { id: createId(), message, type }]
     })),
@@ -371,7 +384,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       const response = await fetch('http://localhost:8000/api/ai/recommend')
       if (!response.ok) throw new Error('Failed to fetch AI recommendation')
       const data = await response.json()
-      
+
       set({
         aiRec: {
           text: data.text,
@@ -396,7 +409,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
   triggerLocalPHDrop: () => {
     set((state) => {
       if (!state.sensors || !state.actuators) return state
-      
+
       return {
         sensors: { ...state.sensors, ph: 4.8 },
         actuators: { ...state.actuators, valveAlkaline: true },
@@ -407,7 +420,7 @@ export const useFarmStore = create<FarmState>((set, get) => ({
         ].slice(-5)
       }
     })
-    
+
     // Auto resolve after 8 seconds
     setTimeout(() => {
       useFarmStore.setState((state) => {
@@ -423,6 +436,6 @@ export const useFarmStore = create<FarmState>((set, get) => ({
       })
     }, 8000)
   },
-  
+
   setCvData: (data) => set({ cvData: data })
 }))

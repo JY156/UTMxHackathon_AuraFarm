@@ -5,6 +5,8 @@ export type {
     RedDotAlert,
     AIRecommendation,
     ImpactMetrics,
+    CVAnalysisData,
+    AIInsightsData,
 } from './payload';
 
 export {
@@ -12,6 +14,3 @@ export {
     isPHOptimal,
     isTempSafe,
 } from './payload';
-
-// Can do if want:
-// import { FarmTelemetryPayload, hasCriticalAlerts } from '@/types';

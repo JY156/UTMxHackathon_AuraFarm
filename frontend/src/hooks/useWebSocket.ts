@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useFarmStore } from '../store/useFarmStore'
 
 export const useWebSocket = () => {

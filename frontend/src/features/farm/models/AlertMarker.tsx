@@ -1,10 +1,8 @@
-import type { GroupProps } from '@react-three/fiber';
-import React, { useRef } from 'react'
-import type { JSX } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export function AlertMarker(props: GroupProps) {
+export function AlertMarker(props: any) {
   const sphereRef = useRef<THREE.Mesh>(null)
   const lightRef = useRef<THREE.PointLight>(null)
 

@@ -1,5 +1,4 @@
-import type { GroupProps } from '@react-three/fiber';
-export function ControlBox(props: GroupProps) {
+export function ControlBox(props: any) {
   return (
     <group {...props}>
       {/* The Main Metal Box */}

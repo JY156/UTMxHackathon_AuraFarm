@@ -1,8 +1,6 @@
-import type { GroupProps } from '@react-three/fiber';
-import React from 'react'
 import { useGLTF, useTexture } from '@react-three/drei'
 
-export function Lettuce(props: GroupProps & { isDiseased?: boolean }) {
+export function Lettuce(props: any & { isDiseased?: boolean }) {
   const { isDiseased, ...groupProps } = props
   // 1. Load the raw shape
   const { nodes } = useGLTF('/models/lettuce/scene.gltf') as any

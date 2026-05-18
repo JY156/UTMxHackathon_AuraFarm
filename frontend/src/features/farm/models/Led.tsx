@@ -1,16 +1,11 @@
-import React, { useMemo, useLayoutEffect } from 'react'
+import { useMemo, useLayoutEffect } from 'react'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import { useFarmStore } from '../../../store/useFarmStore'
-
 export function Led({ mode = 'off', ...props }: any) {
   const { scene } = useGLTF('/models/led/scene.gltf')
 
   // 🌟 THE FIX: Clone the scene so we can spawn infinite copies! 🌟
   const clonedScene = useMemo(() => scene.clone(), [scene])
-  const { lightLevel, led } = useFarmStore(state => state.actuators)
-  const isOff = led === 'off'
-  const activeLightLevel = lightLevel ?? (isOff ? 0 : 100)
 
   const colorMap: Record<string, string> = {
     full: '#ffb7ff',

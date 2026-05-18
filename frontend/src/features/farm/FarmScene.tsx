@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef } from 'react'
+import { memo, useState, useEffect } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, Center, Text } from '@react-three/drei'
@@ -60,7 +60,7 @@ function CameraRig() {
     }
   }, [inspectedId])
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (controls && targetPos && targetLookAt) {
       const c = controls as any
       camera.position.lerp(targetPos, 4 * delta)
@@ -89,7 +89,6 @@ function SelectToFocus({ children, id }: { children: React.ReactNode, id: string
           e.stopPropagation()
 
           // INCREASED OFFSET: Move from (3,2,5) to (5,4,8) to keep camera further away
-          const offset = new THREE.Vector3(5, 4, 8)
           const target = new THREE.Vector3()
           e.object.getWorldPosition(target)
 
@@ -220,7 +219,7 @@ function PlantedRack({
   )
 }
 
-function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
+function FarmScene({ actuators, alerts }: FarmSceneProps) {
   const inspectedId = useFarmStore((s) => s.inspectedId)
   if (!actuators) return null
   const isNight = actuators.led === 'off'
@@ -270,7 +269,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
 
       <Selection>
         <EffectComposer autoClear={false}>
-          <Outline visibleEdgeColor="#e5e7eb" hiddenEdgeColor="#e5e7eb" blur width={1000} edgeStrength={4} />
+          <Outline visibleEdgeColor={0xe5e7eb} hiddenEdgeColor={0xe5e7eb} blur width={1000} edgeStrength={4} />
         </EffectComposer>
 
         <group>

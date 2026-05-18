@@ -32,8 +32,8 @@ export function FarmRack({ sensors, actuators, alerts, profile }: FarmSceneProps
       <mesh position={[0, 2.35, 0]}>
         <boxGeometry args={[2.85, 0.25, 1]} />
         <meshStandardMaterial
-          color={actuators?.led === 'red' ? '#7f1d1d' : '#14532d'}
-          emissive={actuators?.led === 'red' ? '#ef4444' : '#22c55e'}
+          color={(actuators?.led as any) === 'red' ? '#7f1d1d' : '#14532d'}
+          emissive={(actuators?.led as any) === 'red' ? '#ef4444' : '#22c55e'}
           emissiveIntensity={0.3}
           roughness={0.2}
         />
