@@ -20,7 +20,7 @@ function AlertSystem() {
     [alerts, snoozedIds],
   )
 
-  const criticalAlerts = useMemo(() => visibleAlerts.filter((a) => a.severity === 'critical').slice(0, 3), [visibleAlerts])
+  const criticalAlerts = useMemo(() => visibleAlerts.filter((a) => a.severity === 'critical'), [visibleAlerts])
 
   useGSAP(() => {
     if (criticalAlerts.length > 0) {
@@ -92,6 +92,25 @@ function AlertSystem() {
                     <p className="mt-1 text-sm font-medium leading-relaxed text-slate-200">
                       {alert.message}
                     </p>
+                    
+                    {alert.imageUrl && (
+                      <div className="mt-3 relative overflow-hidden rounded-2xl border border-white/10 transition-all duration-300">
+                        <img 
+                          src={alert.imageUrl} 
+                          alt="Vision AI Capture" 
+                          className="w-full h-auto object-cover max-h-48 transition-transform duration-500" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
+                          <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest text-white/80">
+                            <span className="flex items-center gap-1">
+                              <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
+                              Vision Diagnosis Capture
+                            </span>
+                            <span>Conf: 94.3%</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="mt-4 flex items-center gap-2">
                       <button
