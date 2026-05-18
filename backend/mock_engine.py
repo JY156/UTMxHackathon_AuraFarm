@@ -13,7 +13,7 @@ SHARED_OVERRIDE = {
     "autoMode": True,
 }
 
-ACTIVE_ALERTS = set()
+ACTIVE_ALERTS = {}
 ALERT_COOLDOWNS = {}
 LATEST_CV_DATA = None
 
@@ -56,7 +56,7 @@ def create_alert(
 async def auto_clear_alert(alert_id: str, delay: int):
     await asyncio.sleep(delay)
     if alert_id in ACTIVE_ALERTS:
-        ACTIVE_ALERTS.remove(alert_id)
+        ACTIVE_ALERTS.pop(alert_id, None)
         print(f"✅ Auto-cleared alert: {alert_id}")
 
 async def telemetry_generator():
@@ -100,7 +100,7 @@ async def telemetry_generator():
         # 4. Auto-Resolve when refilled
         alert_id_depletion = "resource_depletion_all_all"
         if alert_id_depletion in ACTIVE_ALERTS and SIM_STATE["tank_level"] > 25.0:
-            ACTIVE_ALERTS.remove(alert_id_depletion)
+            ACTIVE_ALERTS.pop(alert_id_depletion, None)
             actions.append(f"RESOLVE_ALERT:{alert_id_depletion}")
         
         if drama_type == "breach":
@@ -129,7 +129,7 @@ async def telemetry_generator():
             # Tank drains rapidly (handled above), but let's also drop moisture since pump is off due to dry-run
             SIM_STATE["moisture"] = round(max(10.0, SIM_STATE["moisture"] - random.uniform(1.0, 3.0)), 1)
             SIM_STATE["ph"] = round(min(7.5, SIM_STATE["ph"] + random.uniform(0.05, 0.15)), 2)
-        elif drama_type == "biological":
+        elif drama_type in ["biological", "biological_threat"]:
             alert = create_alert(
                 alert_type="biological_threat",
                 severity="critical",
@@ -192,7 +192,7 @@ async def telemetry_generator():
             
             # Check active
             if alert_id not in ACTIVE_ALERTS:
-                ACTIVE_ALERTS.add(alert_id)
+                ACTIVE_ALERTS[alert_id] = alert
                 new_alerts.append(alert)
         
         alerts = new_alerts
@@ -245,7 +245,10 @@ async def telemetry_generator():
             "message_type": "state_update",
             "farm_telemetry": telemetry.model_dump(),
             "led_mode": led_mode,
-            "alerts": [alert.model_dump() for alert in alerts],  # Serialize Alert objects
+            "alerts": [
+                alert.model_dump() if hasattr(alert, "model_dump") else alert 
+                for alert in list(ACTIVE_ALERTS.values())
+            ],  # Serialize Alert objects
             "actions": actions,
             "cv_data": LATEST_CV_DATA,
             "impact_metrics": {

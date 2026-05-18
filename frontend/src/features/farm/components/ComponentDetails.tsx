@@ -53,7 +53,7 @@ export default function ComponentDetails() {
             <DetailRow icon={<Sprout />} label="Crop Status" value="Vegetative (Day 14)" />
             <DetailRow icon={<Zap />} label="Light Level (PPFD)" value={actuators.led === 'full' ? '800 µmol' : actuators.led === 'dimmed' ? '400 µmol' : '0 µmol'} />
 
-            {alerts.some(a => a.target === 'rack' || a.rackId === rackNumber) && (
+            {alerts.some(a => !a.resolved && (a.target === 'rack' || a.rackId === rackNumber)) && (
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Biological Threat Detected</span>
@@ -75,7 +75,7 @@ export default function ComponentDetails() {
             <DetailRow icon={<Activity />} label="pH Level" value={sensors.ph.toFixed(1)} />
             <DetailRow icon={<Zap />} label="EC Level" value="1.8 mS/cm" />
 
-            {alerts.some(a => a.target === 'tank') && (
+            {alerts.some(a => !a.resolved && a.target === 'tank') && (
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Resource Depletion Alert</span>
@@ -111,7 +111,7 @@ export default function ComponentDetails() {
             <DetailRow icon={<Wind />} label="Airflow (CFM)" value={actuators.fan ? '420 CFM' : '0 CFM'} />
             <DetailRow icon={<Zap />} label="Power Draw" value={actuators.fan ? '120 W' : '0 W'} />
 
-            {alerts.some(a => a.target === 'fan') && (
+            {alerts.some(a => !a.resolved && a.target === 'fan') && (
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-400">
                 <AlertTriangle className="h-5 w-5" />
                 <span className="font-medium">Mechanical Failure Detected</span>

@@ -125,7 +125,7 @@ async def trigger_scenario(type: str):
                     rackId=3,
                     shelf=1
                 )
-                ACTIVE_ALERTS.add(alert.id)
+                ACTIVE_ALERTS[alert.id] = alert
                 
                 # Auto-send WhatsApp alert
                 if twilio_client:
@@ -170,13 +170,13 @@ class AlertResolve(BaseModel):
 @app.post("/api/alert/resolve")
 async def resolve_alert(payload: AlertResolve):
     if payload.id in ACTIVE_ALERTS:
-        ACTIVE_ALERTS.remove(payload.id)
+        ACTIVE_ALERTS.pop(payload.id, None)
     
     ALERT_COOLDOWNS[payload.id] = time.time()
     
     # Check if resolving biological threat
-    if payload.id.startswith("biological_threat"):
-        if SHARED_OVERRIDE.get("drama") == "biological":
+    if payload.id.startswith("biological_threat") or payload.id.startswith("auto_scan_") or payload.id.startswith("vision_"):
+        if SHARED_OVERRIDE.get("drama") in ["biological", "biological_threat"]:
             SHARED_OVERRIDE["drama"] = None
             print("🎬 Biological threat resolved, returned to baseline.")
             
@@ -184,7 +184,7 @@ async def resolve_alert(payload: AlertResolve):
     if payload.id.startswith("resource_depletion"):
         import mock_engine
         mock_engine.SIM_STATE["tank_level"] = 85.0
-        if SHARED_OVERRIDE.get("drama") == "depletion":
+        if SHARED_OVERRIDE.get("drama") in ["depletion", "resource_depletion"]:
             SHARED_OVERRIDE["drama"] = None
         print("🎬 Tank refilled, resource depletion resolved.")
             
@@ -204,17 +204,17 @@ async def update_control(payload: ControlPayload):
     
     if payload.actuator and payload.state:
         # Check if this clears a mechanical failure
-        if payload.actuator == "fan" and SHARED_OVERRIDE.get("drama") == "failure":
+        if payload.actuator == "fan" and SHARED_OVERRIDE.get("drama") in ["failure", "mechanical_failure"]:
             SHARED_OVERRIDE["drama"] = None
             print("🎬 Fan reset, mechanical failure resolved.")
-        elif payload.actuator == "mist" and SHARED_OVERRIDE.get("drama") == "breach":
+        elif payload.actuator == "mist" and SHARED_OVERRIDE.get("drama") in ["breach", "environmental_breach"]:
             SHARED_OVERRIDE["drama"] = None
             print("🎬 Mist activated, environmental breach resolved.")
             
         SHARED_OVERRIDE[payload.actuator] = payload.state
         
     if payload.led_mode:
-        if payload.led_mode == "off" and SHARED_OVERRIDE.get("drama") == "breach":
+        if payload.led_mode == "off" and SHARED_OVERRIDE.get("drama") in ["breach", "environmental_breach"]:
             SHARED_OVERRIDE["drama"] = None
             print("🎬 LED reduced, environmental breach resolved.")
         SHARED_OVERRIDE["led_mode"] = payload.led_mode
@@ -351,7 +351,19 @@ async def analyze_plant_vision(
             for disease in result["diseases_detected"]:
                 if disease.get("confidence", 0) > 0.7:
                     alert_id = f"vision_{disease['name'].lower().replace(' ', '_')}_{int(time.time())}"
-                    ACTIVE_ALERTS.add(alert_id)
+                    alert = Alert(
+                        id=alert_id,
+                        severity=Severity.critical,
+                        type="biological_threat",
+                        message=f"{disease['name']} detected ({disease['confidence']*100:.0f}% confidence)",
+                        actionRequired=True,
+                        resolved=False,
+                        timestamp=int(time.time() * 1000),
+                        target="rack",
+                        rackId=3,
+                        shelf=1
+                    )
+                    ACTIVE_ALERTS[alert_id] = alert
                     print(f"🔔 Auto-alert created: {disease['name']}")
         
         return result
@@ -401,7 +413,7 @@ async def auto_scan(
                     rackId=rack_id,
                     shelf=shelf
                 )
-                ACTIVE_ALERTS.add(alert.id)
+                ACTIVE_ALERTS[alert.id] = alert
     
     return mock_cv
 
@@ -488,7 +500,7 @@ async def whatsapp_webhook(
     elif "alert" in incoming_msg or "problem" in incoming_msg:
         if ACTIVE_ALERTS:
             reply_text = f"🔴 {len(ACTIVE_ALERTS)} active alert(s):\n"
-            for alert_id in list(ACTIVE_ALERTS)[:3]:
+            for alert_id in list(ACTIVE_ALERTS.keys())[:3]:
                 reply_text += f"• {alert_id}\n"
         else:
             reply_text = "✅ No active alerts. All systems nominal."

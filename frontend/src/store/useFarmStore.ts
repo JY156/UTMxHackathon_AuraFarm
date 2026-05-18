@@ -15,6 +15,7 @@ export interface Alert {
   target?: 'rack' | 'tank' | 'fan' | 'environment'
   rackId?: number
   shelf?: number
+  resolvedAt?: number
 }
 
 export interface FarmSensors {
@@ -217,8 +218,40 @@ export const useFarmStore = create<FarmState>((set) => ({
       // Handle alerts merging
       let nextAlerts = state.alerts
       if (payload.alerts && Array.isArray(payload.alerts)) {
+        const payloadAlerts = payload.alerts
+        
+        // 1. Update existing alerts in store
+        const updatedAlerts = state.alerts.map(existingAlert => {
+          const incoming = payloadAlerts.find(a => a.id === existingAlert.id)
+          if (incoming) {
+            // It is active on the backend!
+            // Reactivate if resolved, except if resolved very recently (within 3 seconds) 
+            // to avoid optimistic UI flicker before backend processes resolution
+            const wasResolvedRecently = existingAlert.resolved && 
+              existingAlert.resolvedAt && 
+              (Date.now() - existingAlert.resolvedAt < 3000)
+              
+            return {
+              ...existingAlert,
+              ...incoming,
+              resolved: wasResolvedRecently ? true : false,
+              resolvedAt: wasResolvedRecently ? existingAlert.resolvedAt : undefined
+            }
+          } else {
+            // Not in backend active list anymore, so mark as resolved!
+            return {
+              ...existingAlert,
+              resolved: true,
+              resolvedAt: existingAlert.resolved ? existingAlert.resolvedAt : Date.now()
+            }
+          }
+        })
+        
+        // 2. Identify and map brand new alerts
         const existingIds = new Set(state.alerts.map(a => a.id))
-        const newAlerts = payload.alerts.filter(a => !existingIds.has(a.id)).map(a => ({
+        const newAlertsFromPayload = payloadAlerts.filter(a => !existingIds.has(a.id))
+        
+        const newAlerts = newAlertsFromPayload.map(a => ({
           ...a,
           id: a.id || createId(),
           resolved: false,
@@ -256,7 +289,7 @@ export const useFarmStore = create<FarmState>((set) => ({
           }
         })
 
-        nextAlerts = [...state.alerts, ...newAlerts]
+        nextAlerts = [...updatedAlerts, ...newAlerts]
       }
 
       // Handle server-issued actions
@@ -265,7 +298,7 @@ export const useFarmStore = create<FarmState>((set) => ({
           if (typeof action === 'string' && action.startsWith('RESOLVE_ALERT:')) {
             const idToResolve = action.split(':')[1]
             nextAlerts = nextAlerts.map(alert =>
-              alert.id === idToResolve ? { ...alert, resolved: true } : alert
+              alert.id === idToResolve ? { ...alert, resolved: true, resolvedAt: Date.now() } : alert
             )
           }
         })
@@ -358,7 +391,7 @@ export const useFarmStore = create<FarmState>((set) => ({
 
       return {
         alerts: state.alerts.map((alert) =>
-          alert.id === id ? { ...alert, resolved: true } : alert,
+          alert.id === id ? { ...alert, resolved: true, resolvedAt: Date.now() } : alert,
         ),
         toasts: [...state.toasts, { id: createId(), message, type: 'success' }]
       }

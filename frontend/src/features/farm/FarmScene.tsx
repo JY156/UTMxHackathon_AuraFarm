@@ -225,8 +225,8 @@ function FarmScene({ actuators, alerts }: FarmSceneProps) {
   const isNight = actuators.led === 'off'
   const isInspecting = inspectedId !== null
 
-  const fanAlert = alerts.some((a) => a.target === 'fan')
-  const tankAlert = alerts.some((a) => a.target === 'tank')
+  const fanAlert = alerts.some((a) => !a.resolved && a.target === 'fan')
+  const tankAlert = alerts.some((a) => !a.resolved && a.target === 'tank')
 
   const bgColor = isNight ? '#020617' : '#0f172a'
   const ambientIntensity = (isNight ? 0.1 : 0.6) * (isInspecting ? 0.4 : 1)
@@ -284,8 +284,8 @@ function FarmScene({ actuators, alerts }: FarmSceneProps) {
           {
             RACK_LAYOUTS.map((layout) => {
               const rackAlerts = [
-                alerts.some(a => a.rackId === layout.id && a.shelf === 0),
-                alerts.some(a => a.rackId === layout.id && a.shelf === 1)
+                alerts.some(a => !a.resolved && a.rackId === layout.id && a.shelf === 0),
+                alerts.some(a => !a.resolved && a.rackId === layout.id && a.shelf === 1)
               ];
 
               return (
