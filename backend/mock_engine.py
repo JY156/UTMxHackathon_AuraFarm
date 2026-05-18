@@ -14,6 +14,7 @@ SHARED_OVERRIDE = {
 
 ACTIVE_ALERTS = set()
 ALERT_COOLDOWNS = {}
+STATE_CHANGED_EVENT = asyncio.Event()
 
 SIM_STATE = {
     "temp": 23.0,
@@ -105,6 +106,15 @@ async def telemetry_generator():
                 "rackId": 3,
                 "shelf": 0
             })
+        elif drama_type == "ph_drop":
+            SIM_STATE["ph"] = 4.5
+            alerts.append({
+                "severity": "critical",
+                "type": "acidic_ph_drop",
+                "message": "Critical pH Drop! Nutrient solution highly acidic. Dosing pH Up buffer.",
+                "actionRequired": True,
+                "target": "water"
+            })
         elif drama_type == "normal":
             # Normal recovery - reset tank to 85.0 directly as simulated manual refill
             SIM_STATE["tank_level"] = 85.0
@@ -162,7 +172,7 @@ async def telemetry_generator():
             
         # Drama forces actuators ON regardless of auto_mode to show crisis
         if drama_type == "failure":
-            fan_state = "on" # Fan is ON but broken (temp spikes)
+            fan_state = "off" # Fan is physically broken, so it stops spinning
         if drama_type == "breach":
             fan_state = "on"
             mist_state = "on"
@@ -206,4 +216,7 @@ async def telemetry_generator():
         }
         
         yield payload_dict
-        await asyncio.sleep(2)
+        try:
+            await asyncio.wait_for(STATE_CHANGED_EVENT.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            pass

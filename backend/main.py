@@ -12,7 +12,7 @@ import google.generativeai as genai
 from PIL import Image
 from twilio.rest import Client
 from schemas import WebSocketPayload
-from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS
+from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS, STATE_CHANGED_EVENT
 from data_source import DataSource
 import json
 import time
@@ -71,6 +71,8 @@ def root(): return {"status": "🟢 Backend running"}
 async def trigger_scenario(type: str):
     print(f"🎬 Demo scenario triggered: {type}")
     SHARED_OVERRIDE["drama"] = type
+    STATE_CHANGED_EVENT.set()
+    STATE_CHANGED_EVENT.clear()
     
     return {"status": "scenario_queued", "scenario": type}
 
@@ -98,6 +100,8 @@ async def resolve_alert(payload: AlertResolve):
             SHARED_OVERRIDE["drama"] = None
         print("🎬 Tank refilled, resource depletion resolved.")
             
+    STATE_CHANGED_EVENT.set()
+    STATE_CHANGED_EVENT.clear()
     return {"status": "success"}
 
 class ControlPayload(BaseModel):
@@ -129,6 +133,8 @@ async def update_control(payload: ControlPayload):
             
         SHARED_OVERRIDE["led_mode"] = payload.led_mode
         
+    STATE_CHANGED_EVENT.set()
+    STATE_CHANGED_EVENT.clear()
     return {"status": "success", "override": SHARED_OVERRIDE}
 
 @app.get("/api/ai/recommend")
