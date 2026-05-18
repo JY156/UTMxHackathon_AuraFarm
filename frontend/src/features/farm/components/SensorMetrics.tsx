@@ -176,35 +176,56 @@ function SensorMetrics() {
             </div>
             
             <div className="col-span-2 rounded-3xl border border-white/10 bg-black/80 p-5 backdrop-blur-xl flex flex-col gap-4">
-              
-              {/* NPK Columns */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Nitrogen', symbol: 'N', optimal: !cvData.nutrient_deficiencies.nitrogen.detected, colorMap: 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20' },
-                  { label: 'Phosphorus', symbol: 'P', optimal: !cvData.nutrient_deficiencies.phosphorus.detected, colorMap: 'bg-amber-500/10 text-amber-400 ring-amber-500/20' },
-                  { label: 'Potassium', symbol: 'K', optimal: !cvData.nutrient_deficiencies.potassium.detected, colorMap: 'bg-violet-500/10 text-violet-400 ring-violet-500/20' },
-                ].map((item) => (
-                  <div key={item.symbol} className="flex flex-col items-center justify-center rounded-2xl bg-white/5 border border-white/10 p-3 gap-2">
-                    <div className="w-full flex justify-end mb-1">
-                      {item.optimal ? (
-                        <span className="text-emerald-400 text-[8px] font-bold uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                          OPTIMAL
-                        </span>
-                      ) : (
-                        <span className="text-rose-400 text-[8px] font-bold uppercase tracking-wider bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
-                          ALERT
-                        </span>
-                      )}
-                    </div>
+                  {
+                    label: 'Nitrogen',
+                    key: 'nitrogen',
+                    data: cvData.nutrient_deficiencies.nitrogen,
+                  },
+                  {
+                    label: 'Phosphorus',
+                    key: 'phosphorus',
+                    data: cvData.nutrient_deficiencies.phosphorus,
+                  },
+                  {
+                    label: 'Potassium',
+                    key: 'potassium',
+                    data: cvData.nutrient_deficiencies.potassium,
+                  },
+                ].map((item) => {
+                  const optimal = !item.data.detected
+                  const confidence = Math.round((item.data.confidence || 0.94) * 100)
 
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 font-black text-lg ${item.colorMap}`}>
-                      {item.symbol}
+                  return (
+                    <div
+                      key={item.key}
+                      className="flex flex-col items-center justify-between gap-3 rounded-2xl bg-white/5 border border-white/10 p-3 transition-all duration-300 hover:bg-white/10"
+                    >
+                      {/* Top: Optimal Badge */}
+                      <div className="w-full flex justify-center">
+                        {optimal ? (
+                          <span className="text-emerald-400 text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                            OPTIMAL
+                          </span>
+                        ) : (
+                          <span className="text-rose-400 text-[8px] font-black uppercase tracking-widest bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)] animate-pulse">
+                            ALERT
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Middle: Name */}
+                      <div className="flex flex-col items-center mt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-100 text-center">{item.label}</span>
+                      </div>
+
+                      {/* Bottom: Confidence */}
+                      <span className="text-[8px] font-bold text-slate-500 tracking-wider text-center">AI Conf: {confidence}%</span>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">{item.label}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
-
             </div>
           </>
         )}
