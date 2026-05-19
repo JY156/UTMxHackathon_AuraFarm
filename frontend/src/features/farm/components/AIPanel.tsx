@@ -400,7 +400,31 @@ function AIPanel() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* Stage Indicators Timeline */}
+            <div className="flex items-center justify-between w-full relative pt-1 border-t border-white/5 pt-3">
+              <div className="absolute top-5 left-2 right-2 h-0.5 bg-white/5 z-0" />
+              {[
+                { label: 'Sprout', active: maturityPercent >= 0 },
+                { label: 'Veg', active: maturityPercent >= 35 },
+                { label: 'Mature', active: maturityPercent >= 75 },
+                { label: 'Harvest', active: maturityPercent >= 95 },
+              ].map((stage) => (
+                <div key={stage.label} className="flex flex-col items-center z-10 relative">
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                    stage.active 
+                      ? 'bg-cyan-500/15 text-cyan-400 border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
+                      : 'bg-black border-white/10 text-slate-600'
+                  }`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${stage.active ? 'bg-cyan-400' : 'bg-transparent'}`} />
+                  </div>
+                  <span className={`text-[8px] font-black uppercase mt-1 tracking-widest ${stage.active ? 'text-cyan-400' : 'text-slate-600'}`}>
+                    {stage.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Alignment</span>
                 <span className="text-xs font-black text-white">94%</span>
