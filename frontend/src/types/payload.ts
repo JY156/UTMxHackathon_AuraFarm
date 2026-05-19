@@ -48,6 +48,9 @@ export interface FarmTelemetryPayload {
   
   /** 💰 Live impact metrics for "Ringgit Saved" dashboard */
   impact_metrics: ImpactMetrics;
+  
+  /** 📸 Computer Vision Analysis Data */
+  cv_data?: CVAnalysisData | null;
 }
 
 // ============================================================================
@@ -109,6 +112,43 @@ export interface ImpactMetrics {
   
   /** Malaysian Ringgit saved (calculated from water + energy) */
   cost_saved_my_r: number;       // Display as "RM XX.XX Saved" 🇲🇾
+}
+
+// ============================================================================
+// 📸 CV & AI Insights Types (Phase 3)
+// ============================================================================
+
+export interface CVAnalysisData {
+  crop_type: string;
+  overall_health: "healthy" | "stressed" | "diseased";
+  growth_stage: "seedling" | "vegetative" | "mature" | "flowering" | "harvest" | "unknown";
+  nutrient_deficiencies: {
+    nitrogen: { detected: boolean; confidence: number; severity_score: number };
+    phosphorus: { detected: boolean; confidence: number; severity_score: number };
+    potassium: { detected: boolean; confidence: number; severity_score: number };
+  };
+  diseases_detected: Array<{ name: string; confidence: number; severity: "mild" | "moderate" | "severe" }>;
+  visual_symptoms: string[];
+  recommendations: string[];
+}
+
+export interface AIInsightsData {
+  growth_stage: string;
+  health_score: number;
+  harvest_data: {
+    days_remaining: number;
+    estimated_date: string;
+  };
+  predicted_yield: {
+    value: number;
+    unit: string;
+  };
+  recommendations: string[];
+  demand_analysis: {
+    peak_days: string[];
+    suggested_harvest_day: string;
+    revenue_estimate: string;
+  };
 }
 
 // ============================================================================

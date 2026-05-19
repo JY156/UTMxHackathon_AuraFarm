@@ -7,8 +7,8 @@ export function ShippingContainer() {
   return (
     <group>
       {/* Floor */}
-      <mesh position={[-0.9, -0.1, 2.8]} receiveShadow>
-        <boxGeometry args={[6.2, 0.2, 12]} />
+      <mesh position={[-0.9, -0.1, 4.8]} receiveShadow>
+        <boxGeometry args={[6.2, 0.2, 16]} />
         {/* Added the missing '#' to the hex code here */}
         <meshStandardMaterial color="#95A5A6" roughness={0.9} />
       </mesh>
@@ -37,10 +37,10 @@ export function ShippingContainer() {
       </mesh>
 
       {/* Right Wall */}
-      <mesh position={[2.1, 2.5, 2.8]} receiveShadow visible={!hideRightWall}>
+      <mesh position={[2.1, 2.5, 4.8]} receiveShadow visible={!hideRightWall}>
         {/* args: [thickness, height, depth] */}
-        {/* Depth matches the floor (12), height matches the back wall (5) */}
-        <boxGeometry args={[0.2, 5, 12]} />
+        {/* Depth matches the floor (16), height matches the back wall (5) */}
+        <boxGeometry args={[0.2, 5, 16]} />
         <meshStandardMaterial color="#D2A56d" roughness={0.7} />
       </mesh>
     </group>

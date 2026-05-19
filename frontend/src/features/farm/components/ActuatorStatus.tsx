@@ -3,28 +3,59 @@ import { Zap, Droplets, Leaf, Lightbulb, AlertCircle, Wind, Power, History, Clou
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore, type LedMode } from '../../../store/useFarmStore'
 
-const eventIcons: Record<string, { icon: any; color: string; bg: string }> = {
-  '💡': { icon: Lightbulb, color: 'text-amber-400', bg: 'bg-amber-400/10' },
-  '💧': { icon: Droplets, color: 'text-cyan-400', bg: 'bg-cyan-400/10' },
-  '🌿': { icon: Leaf, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-  '⚡': { icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+const eventIcons: Record<string, { icon: any; colorStyle: string }> = {
+  '💡': { icon: Lightbulb, colorStyle: 'text-amber-400 bg-amber-500/10 ring-1 ring-amber-500/20' },
+  '💧': { icon: Droplets, colorStyle: 'text-cyan-400 bg-cyan-500/10 ring-1 ring-cyan-500/20' },
+  '🌿': { icon: Leaf, colorStyle: 'text-emerald-400 bg-emerald-500/10 ring-1 ring-emerald-500/20' },
+  '⚡': { icon: Zap, colorStyle: 'text-yellow-400 bg-yellow-500/10 ring-1 ring-yellow-500/20' },
 }
 
 function ActuatorStatus() {
-  const { actuators, automationLog, toggleActuator, setLedMode } = useFarmStore(
+  const { actuators, automationLog, toggleActuator, setLedMode, alerts } = useFarmStore(
     useShallow((state) => ({
       actuators: state.actuators,
       automationLog: state.automationLog,
       toggleActuator: state.toggleActuator,
       setLedMode: state.setLedMode,
+      alerts: state.alerts,
     })),
   )
 
+  const isFanBroken = alerts.some((a) => a.type === 'mechanical_failure' && !a.resolved);
+
   const controls = [
-    { id: 'fan', label: 'Ventilation', active: actuators.fan, icon: Wind, color: 'emerald' },
-    { id: 'pump', label: 'Irrigation', active: actuators.pump, icon: Droplets, color: 'cyan' },
-    { id: 'mist', label: 'Misting System', active: actuators.mist, icon: CloudFog, color: 'blue' },
-    { id: 'led', label: 'Growth LED', active: actuators.led !== 'off', icon: Lightbulb, color: 'amber', mode: actuators.led },
+    { 
+      id: 'fan', label: 'Ventilation', active: actuators.fan, icon: Wind, 
+      colorStyle: {
+        logo: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20',
+        card: 'border-emerald-500/40 bg-emerald-500/10',
+        text: 'text-emerald-400'
+      }
+    },
+    { 
+      id: 'pump', label: 'Irrigation', active: actuators.pump, icon: Droplets,
+      colorStyle: {
+        logo: 'bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/20',
+        card: 'border-cyan-500/40 bg-cyan-500/10',
+        text: 'text-cyan-400'
+      }
+    },
+    { 
+      id: 'mist', label: 'Misting System', active: actuators.mist, icon: CloudFog,
+      colorStyle: {
+        logo: 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20',
+        card: 'border-blue-500/40 bg-blue-500/10',
+        text: 'text-blue-400'
+      }
+    },
+    { 
+      id: 'led', label: 'Growth LED', active: actuators.led !== 'off', icon: Lightbulb, mode: actuators.led,
+      colorStyle: {
+        logo: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20',
+        card: 'border-amber-500/40 bg-amber-500/10',
+        text: 'text-amber-400'
+      }
+    },
   ]
 
   const handleToggle = (id: string) => {
@@ -50,40 +81,49 @@ function ActuatorStatus() {
 
         <div className="grid grid-cols-1 gap-3">
           {controls.map((item) => {
-            const Icon = item.icon
-            const colorClass = item.color === 'blue' ? 'blue' : item.color
+            const Icon = item.icon;
+            const isItemBroken = item.id === 'fan' && isFanBroken;
             
             return (
               <motion.button
                 key={item.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleToggle(item.id)}
+                whileHover={{ scale: isItemBroken ? 1 : 1.02 }}
+                whileTap={{ scale: isItemBroken ? 1 : 0.98 }}
+                onClick={() => !isItemBroken && handleToggle(item.id)}
+                disabled={isItemBroken}
                 className={`relative flex items-center justify-between overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 backdrop-blur-xl ${
-                  item.active 
-                    ? `border-${colorClass}-500/40 bg-${colorClass}-500/10` 
-                    : 'border-white/10 bg-black/40'
+                  isItemBroken
+                    ? 'border-red-500/40 bg-red-500/10 cursor-not-allowed opacity-90'
+                    : item.active 
+                      ? item.colorStyle.card
+                      : 'border-white/10 bg-black/40'
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
-                    item.active ? `bg-${colorClass}-500/20 text-${colorClass}-400` : 'bg-white/5 text-slate-500'
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                    isItemBroken
+                      ? 'bg-red-500/20 text-red-500 ring-1 ring-red-500/40'
+                      : item.active ? item.colorStyle.logo : 'bg-white/5 text-slate-500 ring-1 ring-white/10'
                   }`}>
                     <Icon size={20} />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-white">{item.label}</p>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest ${item.active ? `text-${colorClass}-400` : 'text-slate-500'}`}>
-                      {item.id === 'led' ? (item.active ? `Mode: ${item.mode}` : 'Off') : (item.active ? 'System Active' : 'Idle')}
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${
+                      isItemBroken ? 'text-red-400' : (item.active ? item.colorStyle.text : 'text-slate-500')
+                    }`}>
+                      {isItemBroken ? 'HARDWARE FAILURE' : (item.id === 'led' ? (item.active ? `Mode: ${item.mode}` : 'Off') : (item.active ? 'System Active' : 'Idle'))}
                     </p>
                   </div>
                 </div>
                 
                 {/* Visual Toggle Switch */}
-                <div className={`relative h-5 w-10 rounded-full border border-white/10 transition-colors duration-300 ${item.active ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+                <div className={`relative h-5 w-10 rounded-full border transition-colors duration-300 ${
+                  isItemBroken ? 'border-red-500/40 bg-red-500/10' : (item.active ? 'border-white/10 bg-emerald-500' : 'border-white/10 bg-slate-800')
+                }`}>
                   <motion.div
-                    className="absolute top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
-                    animate={{ x: item.active ? 22 : 2 }}
+                    className={`absolute top-0.5 h-3.5 w-3.5 rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.2)] ${isItemBroken ? 'bg-red-500/50' : 'bg-white'}`}
+                    animate={{ x: item.active && !isItemBroken ? 22 : 2 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   />
                 </div>
@@ -107,7 +147,7 @@ function ActuatorStatus() {
                   .slice()
                   .reverse()
                   .map((entry, i) => {
-                    let iconConfig = { icon: AlertCircle, color: 'text-slate-400', bg: 'bg-white/5' }
+                    let iconConfig = { icon: AlertCircle, colorStyle: 'text-slate-400 bg-white/5 ring-1 ring-white/10' }
                     let displayText = entry
                     
                     for (const [emoji, config] of Object.entries(eventIcons)) {
@@ -127,7 +167,7 @@ function ActuatorStatus() {
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 last:border-0"
                       >
-                        <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${iconConfig.bg} ${iconConfig.color}`}>
+                        <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${iconConfig.colorStyle}`}>
                           <LogIcon size={16} />
                         </div>
                         <div className="flex-1 min-w-0">

@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, Center } from '@react-three/drei'
+import { OrbitControls, Environment, Center, Text } from '@react-three/drei'
 import { Selection, Select, EffectComposer, Outline } from '@react-three/postprocessing'
 import { useFarmStore } from '../../store/useFarmStore'
 import type { Alert, FarmActuators, FarmProfile, FarmSensors } from '../../store/useFarmStore'
@@ -11,7 +11,9 @@ import { Rack } from './models/Rack'
 import { Led } from './models/Led'
 import { Fan } from './models/Fan'
 import { Tank } from './models/Tank'
+import { DosingTank } from './models/DosingTank'
 import { Pump } from './models/Pump'
+import { MiniPump } from './models/MiniPump'
 import { ControlBox } from './models/ControlBox'
 import { SensorNode } from './models/SensorNode'
 import { Cable } from './models/Cable'
@@ -53,12 +55,12 @@ function CameraRig() {
 
   useEffect(() => {
     if (inspectedId === null) {
-      targetPos = new THREE.Vector3(-22.23, 5.66, 17.24)
-      targetLookAt = new THREE.Vector3(2.94, 0.74, 2.63)
+      targetPos = new THREE.Vector3(-20.46, 7.11, 20.78)
+      targetLookAt = new THREE.Vector3(3.78, 0.83, 5.14)
     }
   }, [inspectedId])
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (controls && targetPos && targetLookAt) {
       const c = controls as any
       camera.position.lerp(targetPos, 4 * delta)
@@ -75,21 +77,6 @@ function CameraRig() {
   return null
 }
 
-function CameraLogger() {
-  const { camera, controls } = useThree()
-
-  useFrame(() => {
-    if (controls) {
-      const c = controls as any
-      // Open your browser console (F12) to see these values update live!
-      console.log(
-        `Pos: [${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)}]`,
-        `Target: [${c.target.x.toFixed(2)}, ${c.target.y.toFixed(2)}, ${c.target.z.toFixed(2)}]`
-      )
-    }
-  })
-  return null
-}
 
 function SelectToFocus({ children, id }: { children: React.ReactNode, id: string }) {
   const setInspectedId = useFarmStore((s) => s.setInspectedId)
@@ -102,7 +89,6 @@ function SelectToFocus({ children, id }: { children: React.ReactNode, id: string
           e.stopPropagation()
 
           // INCREASED OFFSET: Move from (3,2,5) to (5,4,8) to keep camera further away
-          const offset = new THREE.Vector3(5, 4, 8)
           const target = new THREE.Vector3()
           e.object.getWorldPosition(target)
 
@@ -154,13 +140,19 @@ function PlantedRack({
   rotation,
   shelfAlerts, // Pass an array of booleans [shelf0Alert, shelf1Alert]
   ledMode = 'off',
-  mistActive = false
+  mistActive = false,
+  growthStage = 'vegetative',
+  nutrientDeficiency = null,
+  isDiseased = false
 }: {
   position: number[],
   rotation: number[],
   shelfAlerts: boolean[],
   ledMode?: string,
-  mistActive?: boolean
+  mistActive?: boolean,
+  growthStage?: 'seedling' | 'vegetative' | 'harvest',
+  nutrientDeficiency?: 'nitrogen' | 'phosphorus' | 'potassium' | null,
+  isDiseased?: boolean
 }) {
   const lightColors: Record<string, string> = {
     full: '#ffb7ff',
@@ -198,49 +190,60 @@ function PlantedRack({
 
       {/* 🌟 SENSORS PER TRAY 🌟 */}
       {
-        TRAY_HEIGHTS.map((height, shelfIndex) => (
-          <group key={`sensor-shelf-${shelfIndex}`}>
-            <SensorNode
-              // Positioned on the side leg of the rack
-              position={[0.2, height + 0.3, -0.1]}
-              rotation={[0, -Math.PI / 2, 0]}
-              // This makes it changeable!
-              isAlert={shelfAlerts[shelfIndex]}
-            />
-            {shelfAlerts[shelfIndex] && (
-              <AlertMarker position={[0, height + 0.8, 0]} />
-            )}
+        TRAY_HEIGHTS.map((height, shelfIndex) => {
+          const isDiseasedShelf = shelfAlerts[shelfIndex] || isDiseased;
+          return (
+            <group key={`sensor-shelf-${shelfIndex}`}>
+              <SensorNode
+                // Positioned on the side leg of the rack
+                position={[0.2, height + 0.3, -0.1]}
+                rotation={[0, -Math.PI / 2, 0]}
+                // This makes it changeable!
+                isAlert={isDiseasedShelf}
+              />
+              {isDiseasedShelf && (
+                <AlertMarker position={[0, height + 0.8, 0]} />
+              )}
 
-            {/* Plants Loop */}
-            <group position={[0, height, 0]}>
-              {PLACEMENT_GRID.map((coords, plantIndex) => {
-                const stableRotation = (plantIndex * 45.67) % (Math.PI * 2);
-                return (
-                  <Lettuce
-                    key={`plant-${shelfIndex}-${plantIndex}`}
-                    position={[coords[0], 0, coords[1]]}
-                    rotation={[0, stableRotation, 0]}
-                    scale={1.7}
-                    isDiseased={shelfAlerts[shelfIndex]}
-                  />
-                )
-              })}
+              {/* Plants Loop */}
+              <group position={[0, height, 0]}>
+                {PLACEMENT_GRID.map((coords, plantIndex) => {
+                  const stableRotation = (plantIndex * 45.67) % (Math.PI * 2);
+                  return (
+                    <Lettuce
+                      key={`plant-${shelfIndex}-${plantIndex}`}
+                      position={[coords[0], 0, coords[1]]}
+                      rotation={[0, stableRotation, 0]}
+                      scale={1.7}
+                      plantIndex={plantIndex}
+                      // Entire shelf infection to ensure the user immediately spots the threat
+                      isDiseased={isDiseasedShelf}
+                      growthStage={growthStage}
+                      nutrientDeficiency={nutrientDeficiency}
+                    />
+                  )
+                })}
+              </group>
             </group>
-          </group>
-        ))
+          )
+        })
       }
     </group>
   )
 }
 
-function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
+function FarmScene({ actuators, alerts }: FarmSceneProps) {
   const inspectedId = useFarmStore((s) => s.inspectedId)
+  const cvData = useFarmStore((s) => s.cvData)
+  const isNitrogenDeficient = cvData?.nutrient_deficiencies?.nitrogen?.detected ?? true
+  const isPhosphorusDeficient = cvData?.nutrient_deficiencies?.phosphorus?.detected ?? false
+  const isPotassiumDeficient = cvData?.nutrient_deficiencies?.potassium?.detected ?? false
   if (!actuators) return null
   const isNight = actuators.led === 'off'
   const isInspecting = inspectedId !== null
 
-  const fanAlert = alerts.some((a) => a.target === 'fan')
-  const tankAlert = alerts.some((a) => a.target === 'tank')
+  const fanAlert = alerts.some((a) => !a.resolved && a.target === 'fan')
+  const tankAlert = alerts.some((a) => !a.resolved && a.target === 'tank')
 
   const bgColor = isNight ? '#020617' : '#0f172a'
   const ambientIntensity = (isNight ? 0.1 : 0.6) * (isInspecting ? 0.4 : 1)
@@ -251,10 +254,9 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
     <Canvas
       shadows
       // 1. WIDER CAMERA: Increased FOV from 45 to 60 and moved position back to 18
-      camera={{ position: [-22.23, 5.66, 17.24], fov: 30 }}
+      camera={{ position: [-20.46, 7.11, 20.78], fov: 30 }}
     >
       <CameraRig />
-      <CameraLogger />
 
       {/* 2. BACKGROUND COLOR: A deep tech-blue or clean white/grey works best */}
       <color attach="background" args={[bgColor]} />
@@ -284,7 +286,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
 
       <Selection>
         <EffectComposer autoClear={false}>
-          <Outline visibleEdgeColor="#e5e7eb" hiddenEdgeColor="#e5e7eb" blur width={1000} edgeStrength={4} />
+          <Outline visibleEdgeColor={0xe5e7eb} hiddenEdgeColor={0xe5e7eb} blur width={1000} edgeStrength={4} />
         </EffectComposer>
 
         <group>
@@ -299,9 +301,31 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           {
             RACK_LAYOUTS.map((layout) => {
               const rackAlerts = [
-                alerts.some(a => a.rackId === layout.id && a.shelf === 0),
-                alerts.some(a => a.rackId === layout.id && a.shelf === 1)
+                alerts.some(a => !a.resolved && a.rackId === layout.id && a.shelf === 0),
+                alerts.some(a => !a.resolved && a.rackId === layout.id && a.shelf === 1)
               ];
+
+              // Hardcoded showcase parameters for the 4 racks (Option B: Single-Tank Realism, all share Nitrogen deficiency)
+              let growthStage: 'seedling' | 'vegetative' | 'harvest' = 'vegetative'
+              let nutrientDeficiency: 'nitrogen' | 'phosphorus' | 'potassium' | null = null
+              if (isNitrogenDeficient) {
+                nutrientDeficiency = 'nitrogen'
+              } else if (isPhosphorusDeficient) {
+                nutrientDeficiency = 'phosphorus'
+              } else if (isPotassiumDeficient) {
+                nutrientDeficiency = 'potassium'
+              }
+              const isDiseased = alerts.some(a => a.type === 'biological_threat' && a.rackId === layout.id && !a.resolved)
+
+              if (layout.id === 1) {
+                growthStage = 'seedling'
+              } else if (layout.id === 2) {
+                growthStage = 'vegetative'
+              } else if (layout.id === 3) {
+                growthStage = 'harvest'
+              } else if (layout.id === 4) {
+                growthStage = 'harvest'
+              }
 
               return (
                 <SelectToFocus key={`rack-${layout.id}`} id={`rack-${layout.id}`}>
@@ -311,6 +335,9 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
                     shelfAlerts={rackAlerts}
                     ledMode={actuators.led}
                     mistActive={actuators.mist}
+                    growthStage={growthStage}
+                    nutrientDeficiency={nutrientDeficiency}
+                    isDiseased={isDiseased}
                   />
                 </SelectToFocus>
               )
@@ -318,7 +345,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           }
 
           <SelectToFocus id="tank">
-            <group position={[1.25, 0, 7.5]}>
+            <group position={[1.25, 0, 8]}>
               <Tank scale={70} />
               {tankAlert && <AlertMarker position={[0, 2.5, 0]} />}
             </group>
@@ -343,7 +370,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           {/* Pipe 1: Straight connection */}
           <Cable
             start={[1.6, 0.23, 6]}
-            end={[1.6, 0.23, 7.5]}
+            end={[1.6, 0.23, 8]}
             color="#cbd5e1"
             radius={0.06}
             flow={actuators.pump}
@@ -362,6 +389,67 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
           {/* Humidity Mist effect */}
           <HumidityMist active={actuators.mist} position={[0, 0, 3]} />
 
+          {/* NPK + pH Dosing Tanks */}
+          {/* NPK + pH Dosing Tanks */}
+          {/* Positioned in a line against the right wall */}
+          <group position={[1.7, 0, 9.25]}>
+            {/* Nitrogen - Green */}
+            <group position={[0, 0, 0]}>
+              <SelectToFocus id="tank-n">
+                <group>
+                  <DosingTank color="#10b981" />
+                  <MiniPump color="#10b981" active={actuators.valveN} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -0.72]} end={[-0.4, 2.0, -1.25]} color="#10b981" radius={0.015} flow={actuators.valveN} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>NITROGEN (N)</Text>
+            </group>
+            {/* Phosphorus - Yellow */}
+            <group position={[0, 0, 0.8]}>
+              <SelectToFocus id="tank-p">
+                <group>
+                  <DosingTank color="#f59e0b" />
+                  <MiniPump color="#f59e0b" active={actuators.valveP} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.12]} end={[-0.4, 2.0, -2.15]} color="#f59e0b" radius={0.015} flow={actuators.valveP} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>PHOSPHORUS (P)</Text>
+            </group>
+            {/* Potassium - Purple */}
+            <group position={[0, 0, 1.6]}>
+              <SelectToFocus id="tank-k">
+                <group>
+                  <DosingTank color="#8b5cf6" />
+                  <MiniPump color="#8b5cf6" active={actuators.valveK} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.52]} end={[-0.4, 2.0, -2.85]} color="#8b5cf6" radius={0.015} flow={actuators.valveK} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>POTASSIUM (K)</Text>
+            </group>
+            {/* Acidic - Red */}
+            <group position={[0, 0, 2.4]}>
+              <SelectToFocus id="tank-acidic">
+                <group>
+                  <DosingTank color="#ef4444" />
+                  <MiniPump color="#ef4444" active={actuators.valveAcidic} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -1.92]} end={[-0.4, 2.0, -3.65]} color="#ef4444" radius={0.015} flow={actuators.valveAcidic} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>ACID</Text>
+            </group>
+            {/* Alkaline - Cyan */}
+            <group position={[0, 0, 3.2]}>
+              <SelectToFocus id="tank-alkaline">
+                <group>
+                  <DosingTank color="#0ea5e9" />
+                  <MiniPump color="#0ea5e9" active={actuators.valveAlkaline} position={[0, 1.11, 0]} rotation={[0, -Math.PI / 2, 0]} />
+                  <Cable start={[0, 1.15, 0.05]} mid={[-0.2, 1.15, -2.32]} end={[-0.4, 2.0, -4.45]} color="#0ea5e9" radius={0.015} flow={actuators.valveAlkaline} />
+                </group>
+              </SelectToFocus>
+              <Text position={[-0.31, 0.5, 0]} rotation={[0, -Math.PI / 2, 0]} fontSize={0.07} color="white" outlineWidth={0.005} outlineColor="black" {...{ curveRadius: -0.31 }}>ALKALINE</Text>
+            </group>
+          </group>
+
           <SelectToFocus id="control-box">
             <ControlBox position={[1.9, 3, 7]} rotation={[0, -Math.PI / 2, 0]} />
           </SelectToFocus>
@@ -371,7 +459,7 @@ function FarmScene({ sensors, actuators, alerts, profile }: FarmSceneProps) {
       {/* 5. WIDER CONTROLS: Increased maxDistance so you can zoom out further */}
       <OrbitControls
         makeDefault
-        target={[2.94, 0.74, 2.63]}
+        target={[3.78, 0.83, 5.14]}
         minDistance={2}
         maxDistance={40}
         maxPolarAngle={Math.PI / 2.1}

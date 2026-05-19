@@ -1,20 +1,19 @@
 import * as THREE from 'three'
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Center } from '@react-three/drei'
 import { useFarmStore } from '../../../store/useFarmStore'
 
-export function Fan({ active = true, ...props }: JSX.IntrinsicElements['group'] & { active?: boolean }) {
+export function Fan({ active = true, ...props }: any) {
   // 1. The Reference just for the parts that need to spin
   const propellerRef = useRef<THREE.Group>(null)
-  const { fanSpeed, fan } = useFarmStore(state => state.actuators)
-  const activeSpeed = (fanSpeed ?? (fan ? 50 : 0))
+  const fan = useFarmStore(state => state.actuators?.fan)
 
   // 2. The Animation Loop (Control the speed here)
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (propellerRef.current && fan) {
       // Multiply by a higher number (e.g., 20) for faster speed factor
-      propellerRef.current.rotation.z += delta * 15 
+      propellerRef.current.rotation.z += delta * 15
     }
   })
 
@@ -29,13 +28,13 @@ export function Fan({ active = true, ...props }: JSX.IntrinsicElements['group'] 
         <group name="fan_casing">
           {/* Inner Circular Shroud */}
           <mesh position={[0, 0, 0]}>
-          {/* args: [radius, tubeThickness, radialSegments, tubularSegments] 
+            {/* args: [radius, tubeThickness, radialSegments, tubularSegments] 
             radius: 0.6
             tubeThickness: 0.08 (increase this to make the wall "chunkier")
           */}
-          <torusGeometry args={[0.6, 0.08, 16, 32]} />
-          {casingMaterial}
-        </mesh>
+            <torusGeometry args={[0.6, 0.08, 16, 32]} />
+            {casingMaterial}
+          </mesh>
         </group>
 
         {/* --- ROTATING PART: The Blades & Hub (Attach the ref!) --- */}

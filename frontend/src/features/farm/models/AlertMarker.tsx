@@ -1,8 +1,8 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export function AlertMarker(props: JSX.IntrinsicElements['group']) {
+export function AlertMarker(props: any) {
   const sphereRef = useRef<THREE.Mesh>(null)
   const lightRef = useRef<THREE.PointLight>(null)
 

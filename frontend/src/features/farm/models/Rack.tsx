@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import React from 'react'
 import { useGLTF } from '@react-three/drei'
 import type { GLTF } from 'three-stdlib'
 
@@ -13,8 +12,8 @@ type GLTFResult = GLTF & {
 }
 
 // 1. Changed function name from 'Model' to 'Rack'
-export function Rack(props: JSX.IntrinsicElements['group']) {
-  const { nodes, materials } = useGLTF('/models/rack/rack.glb') as GLTFResult
+export function Rack(props: any) {
+  const { nodes, materials } = useGLTF('/models/rack/rack.glb') as unknown as GLTFResult
   
   // 🌟 Add this line here! 
   // 0.4 is a good starting point to stop the "white glow"

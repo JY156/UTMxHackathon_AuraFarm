@@ -1,4 +1,4 @@
-export function ControlBox(props: JSX.IntrinsicElements['group']) {
+export function ControlBox(props: any) {
   return (
     <group {...props}>
       {/* The Main Metal Box */}
