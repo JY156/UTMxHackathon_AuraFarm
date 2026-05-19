@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Leaf, Info, Sparkles, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFarmStore, type FarmProfile } from '../../../store/useFarmStore'
+import AIMarketRecommendation from './AIMarketRecommendation'
 
 const CROP_TEMPLATES: Record<string, FarmProfile> = {
   basil: {
@@ -74,6 +75,11 @@ function JSONImporter() {
           </p>
         </div>
       </header>
+
+      {/* AI Market Recommendation (placed under Crop Orchestration on right-side panel) */}
+      <div className="mt-4">
+        <AIMarketRecommendation />
+      </div>
 
       {/* Upload Zone */}
       <motion.div

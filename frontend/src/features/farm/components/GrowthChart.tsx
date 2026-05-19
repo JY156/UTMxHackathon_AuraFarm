@@ -70,10 +70,10 @@ function GrowthChart() {
         </div>
       </header>
 
-      <div className="group relative overflow-hidden rounded-[32px] border border-white/5 bg-black/20 p-8 backdrop-blur-md">
+      <div className="group relative overflow-hidden rounded-[32px] border border-white/5 bg-black/20 p-6 backdrop-blur-md">
         <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_50%_50%,_rgba(16,185,129,0.05)_0%,_transparent_70%)]" />
         
-        <div className="relative aspect-[2.5/1] w-full">
+        <div className="relative aspect-[3.3/1] w-full">
           <svg viewBox={`0 0 ${chart.width} ${chart.height}`} className="h-full w-full overflow-visible" onMouseLeave={() => setHoveredIndex(null)}>
             <defs>
               {lines.map(line => (
