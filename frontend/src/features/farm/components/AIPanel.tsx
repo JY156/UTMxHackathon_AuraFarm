@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { TrendingUp, RefreshCw, BrainCircuit, Eye, Flame, AlertTriangle, CheckCircle, Loader2, ShieldCheck, X, Wallet, ExternalLink } from 'lucide-react'
+import { RefreshCw, BrainCircuit, Eye, Flame, AlertTriangle, CheckCircle, Loader2, ShieldCheck, X, Wallet, ExternalLink } from 'lucide-react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { Lettuce } from '../models/Lettuce'
@@ -180,7 +180,6 @@ function AIPanel() {
   }
 
   const strokeWidth = 8
-  const radius = 36
 
   // 2. Profile-Bound Predictive Harvest Data
   const cropName = profile?.name || 'Lettuce'
