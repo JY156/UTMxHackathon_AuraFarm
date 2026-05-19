@@ -15,6 +15,7 @@ SHARED_OVERRIDE = {
 
 ACTIVE_ALERTS = {}
 ALERT_COOLDOWNS = {}
+STATE_CHANGED_EVENT = asyncio.Event()
 LATEST_CV_DATA = None
 
 SIM_STATE = {
@@ -129,17 +130,16 @@ async def telemetry_generator():
             # Tank drains rapidly (handled above), but let's also drop moisture since pump is off due to dry-run
             SIM_STATE["moisture"] = round(max(10.0, SIM_STATE["moisture"] - random.uniform(1.0, 3.0)), 1)
             SIM_STATE["ph"] = round(min(7.5, SIM_STATE["ph"] + random.uniform(0.05, 0.15)), 2)
-        elif drama_type in ["biological", "biological_threat"]:
-            alert = create_alert(
-                alert_type="biological_threat",
-                severity="critical",
-                message="Leaf Rust / Aphids detected. Quarantine and treat immediately.",
-                action_required=True,
-                target="rack",
-                rack_id=3,
-                shelf=0
-            )
-            alerts.append(alert)
+        elif drama_type == "biological":
+            alerts.append({
+                "severity": "critical",
+                "type": "biological_threat",
+                "message": "Leaf Rust / Aphids detected. Quarantine and treat immediately.",
+                "actionRequired": True,
+                "target": "rack",
+                "rackId": 3,
+                "shelf": 0
+            })
         elif drama_type == "normal":
             # Normal recovery - reset tank to 85.0 directly as simulated manual refill
             SIM_STATE["tank_level"] = 85.0
@@ -210,7 +210,7 @@ async def telemetry_generator():
             
         # Drama forces actuators ON regardless of auto_mode to show crisis
         if drama_type == "failure":
-            fan_state = "on"  # Fan is ON but broken (temp spikes)
+            fan_state = "off" # Fan is physically broken, so it stops spinning
         if drama_type == "breach":
             fan_state = "on"
             mist_state = "on"
@@ -259,4 +259,7 @@ async def telemetry_generator():
         }
         
         yield payload_dict
-        await asyncio.sleep(2)
+        try:
+            await asyncio.wait_for(STATE_CHANGED_EVENT.wait(), timeout=2.0)
+        except asyncio.TimeoutError:
+            pass

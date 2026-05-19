@@ -24,7 +24,7 @@ from google.genai import types
 
 # --- Local imports ---
 from schemas import WebSocketPayload, Alert, Severity
-from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS, LATEST_CV_DATA
+from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS, LATEST_CV_DATA, STATE_CHANGED_EVENT
 from data_source import DataSource
 from demo_cv_cache import DEMO_CV_CACHE  # ← Your pre-analyzed demo responses
 
@@ -155,6 +155,8 @@ async def trigger_scenario(type: str):
         mock_engine.SIM_STATE["humidity"] = 92.0
     
     SHARED_OVERRIDE["drama"] = type
+    STATE_CHANGED_EVENT.set()
+    STATE_CHANGED_EVENT.clear()
     
     return {
         "status": "scenario_queued", 
@@ -176,6 +178,8 @@ async def resolve_alert(payload: AlertResolve):
     
     # Check if resolving biological threat
     if payload.id.startswith("biological_threat") or payload.id.startswith("auto_scan_") or payload.id.startswith("vision_"):
+        global LATEST_CV_DATA
+        LATEST_CV_DATA = None
         if SHARED_OVERRIDE.get("drama") in ["biological", "biological_threat"]:
             SHARED_OVERRIDE["drama"] = None
             print("🎬 Biological threat resolved, returned to baseline.")
@@ -188,6 +192,8 @@ async def resolve_alert(payload: AlertResolve):
             SHARED_OVERRIDE["drama"] = None
         print("🎬 Tank refilled, resource depletion resolved.")
             
+    STATE_CHANGED_EVENT.set()
+    STATE_CHANGED_EVENT.clear()
     return {"status": "success"}
 
 # --- Actuator Control ---
@@ -219,6 +225,8 @@ async def update_control(payload: ControlPayload):
             print("🎬 LED reduced, environmental breach resolved.")
         SHARED_OVERRIDE["led_mode"] = payload.led_mode
         
+    STATE_CHANGED_EVENT.set()
+    STATE_CHANGED_EVENT.clear()
     return {"status": "success", "override": SHARED_OVERRIDE}
 
 # --- AI Recommendation Endpoint ---

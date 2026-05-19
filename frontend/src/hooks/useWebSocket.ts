@@ -44,24 +44,28 @@ export const useWebSocket = () => {
                   moisture: sensors.moisture_pct,
                   ph: sensors.ph_level,
                   tankLevel: sensors.tank_level_pct,
+                  nitrogen: sensors.nitrogen_mg_l,
+                  phosphorus: sensors.phosphorus_mg_l,
+                  potassium: sensors.potassium_mg_l,
                 },
                 actuators: {
                   fan: actuators.cooling_fan === 'on',
                   pump: actuators.water_pump === 'on',
                   mist: actuators.exhaust_fan === 'on', 
                   led: raw.led_mode || (actuators.led_intensity_pct > 0 ? 'full' : 'off'),
-                  valveN: false,
-                  valveP: false,
-                  valveK: false,
-                  valveAcidic: false,
-                  valveAlkaline: false,
+                  valveN: actuators.valveN !== undefined ? actuators.valveN : (useFarmStore.getState().actuators?.valveN || false),
+                  valveP: actuators.valveP !== undefined ? actuators.valveP : (useFarmStore.getState().actuators?.valveP || false),
+                  valveK: actuators.valveK !== undefined ? actuators.valveK : (useFarmStore.getState().actuators?.valveK || false),
+                  valveAcidic: actuators.valveAcidic !== undefined ? actuators.valveAcidic : (useFarmStore.getState().actuators?.valveAcidic || false),
+                  valveAlkaline: actuators.valveAlkaline !== undefined ? actuators.valveAlkaline : (useFarmStore.getState().actuators?.valveAlkaline || false),
                 },
                 impact: {
                   waterSaved: raw.impact_metrics?.water_saved_liters,
                   energySaved: raw.impact_metrics?.energy_saved_kwh,
                   costSaved: raw.impact_metrics?.cost_saved_my_r,
                 },
-                alerts: raw.alerts || []
+                alerts: raw.alerts || [],
+                cv_data: raw.cv_data
               })
             }
           } catch (e) {

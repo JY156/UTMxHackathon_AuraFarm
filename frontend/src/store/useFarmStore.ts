@@ -15,6 +15,7 @@ export interface Alert {
   target?: 'rack' | 'tank' | 'fan' | 'environment'
   rackId?: number
   shelf?: number
+  imageUrl?: string
   resolvedAt?: number
 }
 
@@ -24,6 +25,9 @@ export interface FarmSensors {
   moisture: number
   ph: number
   tankLevel: number
+  nitrogen?: number
+  phosphorus?: number
+  potassium?: number
 }
 
 export interface FarmActuators {
@@ -132,6 +136,8 @@ export interface FarmState {
   setInspectedId: (id: string | null) => void
   triggerLocalPHDrop: () => void
   setCvData: (data: CVData | null) => void
+  triggerNutrientFix: (type?: 'nitrogen' | 'phosphorus' | 'potassium') => void
+  triggerNutrientDepletion: (type?: 'nitrogen' | 'phosphorus' | 'potassium') => void
 }
 
 const createId = () => globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)
@@ -180,18 +186,7 @@ export const useFarmStore = create<FarmState>((set) => ({
   inspectedId: null,
   connectionStatus: 'disconnected',
   connectionAttempts: 0,
-  cvData: {
-    crop_type: "lettuce",
-    overall_health: "healthy",
-    diseases_detected: [],
-    nutrient_deficiencies: {
-      nitrogen: { detected: false, confidence: 0, severity_score: 0 },
-      phosphorus: { detected: false, confidence: 0, severity_score: 0 },
-      potassium: { detected: false, confidence: 0, severity_score: 0 }
-    },
-    visual_symptoms: [],
-    recommendations: []
-  },
+  cvData: null,
 
   syncFromBackend: (payload) =>
     set((state) => {
@@ -205,7 +200,7 @@ export const useFarmStore = create<FarmState>((set) => ({
       const nextActuators = payload.actuators || state.actuators
       const nextImpact = payload.impact || state.impact
       const newActions = payload.actions || []
-      const nextCvData = (payload as any).cv_data || state.cvData
+      const nextCvData = (payload as any).cv_data !== undefined ? (payload as any).cv_data : state.cvData
 
       const newHistory = nextSensors ? [
         ...state.history,
@@ -219,7 +214,7 @@ export const useFarmStore = create<FarmState>((set) => ({
       let nextAlerts = state.alerts
       if (payload.alerts && Array.isArray(payload.alerts)) {
         const payloadAlerts = payload.alerts
-        
+
         // 1. Update existing alerts in store
         const updatedAlerts = state.alerts.map(existingAlert => {
           const incoming = payloadAlerts.find(a => a.id === existingAlert.id)
@@ -227,10 +222,10 @@ export const useFarmStore = create<FarmState>((set) => ({
             // It is active on the backend!
             // Reactivate if resolved, except if resolved very recently (within 3 seconds) 
             // to avoid optimistic UI flicker before backend processes resolution
-            const wasResolvedRecently = existingAlert.resolved && 
-              existingAlert.resolvedAt && 
+            const wasResolvedRecently = existingAlert.resolved &&
+              existingAlert.resolvedAt &&
               (Date.now() - existingAlert.resolvedAt < 3000)
-              
+
             return {
               ...existingAlert,
               ...incoming,
@@ -246,11 +241,11 @@ export const useFarmStore = create<FarmState>((set) => ({
             }
           }
         })
-        
+
         // 2. Identify and map brand new alerts
         const existingIds = new Set(state.alerts.map(a => a.id))
         const newAlertsFromPayload = payloadAlerts.filter(a => !existingIds.has(a.id))
-        
+
         const newAlerts = newAlertsFromPayload.map(a => ({
           ...a,
           id: a.id || createId(),
@@ -446,11 +441,11 @@ export const useFarmStore = create<FarmState>((set) => ({
       return {
         sensors: { ...state.sensors, ph: 4.8 },
         actuators: { ...state.actuators, valveAlkaline: true },
-        inspectedId: 'tank-alkaline',
         automationLog: [
           ...state.automationLog,
           `[SYSTEM] pH drop detected. Activating Alkaline dosing valve. Re-evaluating in 5 mins.`
-        ].slice(-5)
+        ].slice(-5),
+        toasts: [...state.toasts, { id: createId(), message: `Alert: pH dropped to 4.8!`, type: 'error' }, { id: createId(), message: `Dosing pump active: Injecting Alkaline buffer`, type: 'info' }]
       }
     })
 
@@ -464,11 +459,94 @@ export const useFarmStore = create<FarmState>((set) => ({
           automationLog: [
             ...state.automationLog,
             `[SYSTEM] pH stabilized at 6.2. Alkaline valve closed.`
-          ].slice(-5)
+          ].slice(-5),
+          toasts: [...state.toasts, { id: createId(), message: `pH stabilized at 6.2!`, type: 'success' }]
         }
       })
     }, 8000)
   },
 
-  setCvData: (data) => set({ cvData: data })
+  setCvData: (data) => set({ cvData: data }),
+
+  triggerNutrientDepletion: (type = 'nitrogen') => {
+    set((state) => {
+      const capName = type.charAt(0).toUpperCase() + type.slice(1)
+      const baseCv = state.cvData || {
+        crop_type: "lettuce",
+        overall_health: "healthy",
+        diseases_detected: [],
+        nutrient_deficiencies: {
+          nitrogen: { detected: false, confidence: 0, severity_score: 0 },
+          phosphorus: { detected: false, confidence: 0, severity_score: 0 },
+          potassium: { detected: false, confidence: 0, severity_score: 0 }
+        },
+        visual_symptoms: [],
+        recommendations: []
+      }
+      return {
+        cvData: {
+          ...baseCv,
+          nutrient_deficiencies: {
+            ...baseCv.nutrient_deficiencies,
+            [type]: { detected: true, confidence: 0.91, severity_score: 0.85 }
+          }
+        },
+        automationLog: [
+          ...state.automationLog,
+          `[CV ALGORITHM] Systemic low ${capName} levels detected in reservoir solution.`
+        ].slice(-5),
+        toasts: [...state.toasts, { id: createId(), message: `Alert: Low ${capName} levels detected!`, type: 'error' }]
+      }
+    })
+
+    // Automatically trigger the dosing recovery system after 6 seconds!
+    setTimeout(() => {
+      const state = useFarmStore.getState()
+      const isDeficient = state.cvData?.nutrient_deficiencies?.[type]?.detected
+      if (isDeficient) {
+        state.triggerNutrientFix(type)
+      }
+    }, 6000)
+  },
+
+  triggerNutrientFix: (type = 'nitrogen') => {
+    const valveKey = type === 'nitrogen' ? 'valveN' : type === 'phosphorus' ? 'valveP' : 'valveK'
+    const capName = type.charAt(0).toUpperCase() + type.slice(1)
+    const capLetter = type === 'nitrogen' ? 'N' : type === 'phosphorus' ? 'P' : 'K'
+    const solName = type === 'nitrogen' ? 'Nitrate' : type === 'phosphorus' ? 'Phosphate' : 'Potash'
+    const targetPpm = type === 'nitrogen' ? '820 ppm' : type === 'phosphorus' ? '280 ppm' : '650 ppm'
+
+    set((state) => {
+      if (!state.sensors || !state.actuators || !state.cvData) return state
+      return {
+        actuators: { ...state.actuators, [valveKey]: true },
+        automationLog: [
+          ...state.automationLog,
+          `[SYSTEM] Dosing pump ${capLetter} active. Injecting ${solName} solution to central loop.`
+        ].slice(-5),
+        toasts: [...state.toasts, { id: createId(), message: `Dosing pump ${capLetter} active: Injecting ${solName}`, type: 'info' }]
+      }
+    })
+
+    setTimeout(() => {
+      useFarmStore.setState((state) => {
+        if (!state.sensors || !state.actuators || !state.cvData) return state
+        return {
+          cvData: {
+            ...state.cvData,
+            nutrient_deficiencies: {
+              ...state.cvData.nutrient_deficiencies,
+              [type]: { detected: false, confidence: 0.99, severity_score: 0 }
+            }
+          },
+          actuators: { ...state.actuators, [valveKey]: false },
+          automationLog: [
+            ...state.automationLog,
+            `[SYSTEM] Central reservoir ${capName} levels stabilized at ${targetPpm}.`
+          ].slice(-5),
+          toasts: [...state.toasts, { id: createId(), message: `${capName} levels stabilized: All crops healthy!`, type: 'success' }]
+        }
+      })
+    }, 4000)
+  }
 }))

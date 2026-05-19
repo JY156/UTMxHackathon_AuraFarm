@@ -140,13 +140,19 @@ function PlantedRack({
   rotation,
   shelfAlerts, // Pass an array of booleans [shelf0Alert, shelf1Alert]
   ledMode = 'off',
-  mistActive = false
+  mistActive = false,
+  growthStage = 'vegetative',
+  nutrientDeficiency = null,
+  isDiseased = false
 }: {
   position: number[],
   rotation: number[],
   shelfAlerts: boolean[],
   ledMode?: string,
-  mistActive?: boolean
+  mistActive?: boolean,
+  growthStage?: 'seedling' | 'vegetative' | 'harvest',
+  nutrientDeficiency?: 'nitrogen' | 'phosphorus' | 'potassium' | null,
+  isDiseased?: boolean
 }) {
   const lightColors: Record<string, string> = {
     full: '#ffb7ff',
@@ -184,36 +190,43 @@ function PlantedRack({
 
       {/* 🌟 SENSORS PER TRAY 🌟 */}
       {
-        TRAY_HEIGHTS.map((height, shelfIndex) => (
-          <group key={`sensor-shelf-${shelfIndex}`}>
-            <SensorNode
-              // Positioned on the side leg of the rack
-              position={[0.2, height + 0.3, -0.1]}
-              rotation={[0, -Math.PI / 2, 0]}
-              // This makes it changeable!
-              isAlert={shelfAlerts[shelfIndex]}
-            />
-            {shelfAlerts[shelfIndex] && (
-              <AlertMarker position={[0, height + 0.8, 0]} />
-            )}
+        TRAY_HEIGHTS.map((height, shelfIndex) => {
+          const isDiseasedShelf = shelfAlerts[shelfIndex] || isDiseased;
+          return (
+            <group key={`sensor-shelf-${shelfIndex}`}>
+              <SensorNode
+                // Positioned on the side leg of the rack
+                position={[0.2, height + 0.3, -0.1]}
+                rotation={[0, -Math.PI / 2, 0]}
+                // This makes it changeable!
+                isAlert={isDiseasedShelf}
+              />
+              {isDiseasedShelf && (
+                <AlertMarker position={[0, height + 0.8, 0]} />
+              )}
 
-            {/* Plants Loop */}
-            <group position={[0, height, 0]}>
-              {PLACEMENT_GRID.map((coords, plantIndex) => {
-                const stableRotation = (plantIndex * 45.67) % (Math.PI * 2);
-                return (
-                  <Lettuce
-                    key={`plant-${shelfIndex}-${plantIndex}`}
-                    position={[coords[0], 0, coords[1]]}
-                    rotation={[0, stableRotation, 0]}
-                    scale={1.7}
-                    isDiseased={shelfAlerts[shelfIndex]}
-                  />
-                )
-              })}
+              {/* Plants Loop */}
+              <group position={[0, height, 0]}>
+                {PLACEMENT_GRID.map((coords, plantIndex) => {
+                  const stableRotation = (plantIndex * 45.67) % (Math.PI * 2);
+                  return (
+                    <Lettuce
+                      key={`plant-${shelfIndex}-${plantIndex}`}
+                      position={[coords[0], 0, coords[1]]}
+                      rotation={[0, stableRotation, 0]}
+                      scale={1.7}
+                      plantIndex={plantIndex}
+                      // Entire shelf infection to ensure the user immediately spots the threat
+                      isDiseased={isDiseasedShelf}
+                      growthStage={growthStage}
+                      nutrientDeficiency={nutrientDeficiency}
+                    />
+                  )
+                })}
+              </group>
             </group>
-          </group>
-        ))
+          )
+        })
       }
     </group>
   )
@@ -221,6 +234,10 @@ function PlantedRack({
 
 function FarmScene({ actuators, alerts }: FarmSceneProps) {
   const inspectedId = useFarmStore((s) => s.inspectedId)
+  const cvData = useFarmStore((s) => s.cvData)
+  const isNitrogenDeficient = cvData?.nutrient_deficiencies?.nitrogen?.detected ?? true
+  const isPhosphorusDeficient = cvData?.nutrient_deficiencies?.phosphorus?.detected ?? false
+  const isPotassiumDeficient = cvData?.nutrient_deficiencies?.potassium?.detected ?? false
   if (!actuators) return null
   const isNight = actuators.led === 'off'
   const isInspecting = inspectedId !== null
@@ -288,6 +305,28 @@ function FarmScene({ actuators, alerts }: FarmSceneProps) {
                 alerts.some(a => !a.resolved && a.rackId === layout.id && a.shelf === 1)
               ];
 
+              // Hardcoded showcase parameters for the 4 racks (Option B: Single-Tank Realism, all share Nitrogen deficiency)
+              let growthStage: 'seedling' | 'vegetative' | 'harvest' = 'vegetative'
+              let nutrientDeficiency: 'nitrogen' | 'phosphorus' | 'potassium' | null = null
+              if (isNitrogenDeficient) {
+                nutrientDeficiency = 'nitrogen'
+              } else if (isPhosphorusDeficient) {
+                nutrientDeficiency = 'phosphorus'
+              } else if (isPotassiumDeficient) {
+                nutrientDeficiency = 'potassium'
+              }
+              const isDiseased = alerts.some(a => a.type === 'biological_threat' && a.rackId === layout.id && !a.resolved)
+
+              if (layout.id === 1) {
+                growthStage = 'seedling'
+              } else if (layout.id === 2) {
+                growthStage = 'vegetative'
+              } else if (layout.id === 3) {
+                growthStage = 'harvest'
+              } else if (layout.id === 4) {
+                growthStage = 'harvest'
+              }
+
               return (
                 <SelectToFocus key={`rack-${layout.id}`} id={`rack-${layout.id}`}>
                   <PlantedRack
@@ -296,6 +335,9 @@ function FarmScene({ actuators, alerts }: FarmSceneProps) {
                     shelfAlerts={rackAlerts}
                     ledMode={actuators.led}
                     mistActive={actuators.mist}
+                    growthStage={growthStage}
+                    nutrientDeficiency={nutrientDeficiency}
+                    isDiseased={isDiseased}
                   />
                 </SelectToFocus>
               )

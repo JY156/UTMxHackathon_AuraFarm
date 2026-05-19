@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings2, X, AlertTriangle, ShieldCheck, RefreshCw, Command } from 'lucide-react'
+import { Settings2, X, AlertTriangle, ShieldCheck, RefreshCw, Command, ChevronDown, ChevronRight } from 'lucide-react'
 import { useFarmStore } from '../../../store/useFarmStore'
 
 function DemoController() {
   const resolveAlert = useFarmStore((state) => state.resolveAlert)
   const addToast = useFarmStore((state) => state.addToast)
   const [open, setOpen] = useState(false)
-  const [isScanning, setIsScanning] = useState(false)
-  const [scanResult, setScanResult] = useState<any>(null)
+  const [autoOpen, setAutoOpen] = useState(true)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -35,29 +33,120 @@ function DemoController() {
     }
   }
 
-  const scenarioDepletion = () => triggerScenario('depletion')
-  const scenarioFailure = () => triggerScenario('failure')
+  const scenarioDepletion = () => {
+    triggerScenario('depletion')
+    useFarmStore.setState((state) => {
+      if (!state.sensors || !state.actuators) return {}
+      const alertId = "resource_depletion_all_all"
+      const hasAlert = state.alerts.some(a => a.id === alertId && !a.resolved)
+      const newAlerts = hasAlert ? state.alerts : [
+        ...state.alerts.filter(a => a.id !== alertId),
+        {
+          id: alertId,
+          severity: 'critical' as const,
+          type: 'resource_depletion',
+          message: 'Water reservoir critical! Tank level is 0%. Mist and pump system disabled (dry-run protection). Refill immediately.',
+          actionRequired: true,
+          resolved: false,
+          timestamp: Date.now(),
+          target: 'tank' as const
+        }
+      ]
+      return {
+        sensors: { ...state.sensors, tankLevel: 0.0, moisture: 15.0 },
+        actuators: { ...state.actuators, pump: false },
+        alerts: newAlerts,
+        toasts: [...state.toasts, { id: Math.random().toString(), message: "Alert: Water reservoir depletion! Pump disabled for dry-run protection.", type: 'error' }]
+      }
+    })
+  }
+
+  const scenarioFailure = () => {
+    triggerScenario('failure')
+    useFarmStore.setState((state) => {
+      if (!state.sensors || !state.actuators) return {}
+      const alertId = "mechanical_failure_all_all"
+      const hasAlert = state.alerts.some(a => a.id === alertId && !a.resolved)
+      const newAlerts = hasAlert ? state.alerts : [
+        ...state.alerts.filter(a => a.id !== alertId),
+        {
+          id: alertId,
+          severity: 'critical' as const,
+          type: 'mechanical_failure',
+          message: 'Hardware failure: Fan 1 unresponsive. Check fuse or motor.',
+          actionRequired: true,
+          resolved: false,
+          timestamp: Date.now(),
+          target: 'fan' as const
+        }
+      ]
+      return {
+        sensors: { ...state.sensors, temp: 32.0, humidity: 80.0 },
+        actuators: { ...state.actuators, fan: false },
+        alerts: newAlerts,
+        toasts: [...state.toasts, { id: Math.random().toString(), message: "cooling_fan motor/fuse unresponsive!", type: 'error' }]
+      }
+    })
+  }
 
   const scenarioBiological = async () => {
     setOpen(false)
-    setIsScanning(true)
-    setScanResult(null)
-
-    await new Promise(r => setTimeout(r, 2000))
-
     try {
       const res = await fetch('http://localhost:8000/api/demo/auto-scan', { method: 'POST' })
       const data = await res.json()
-      setIsScanning(false)
-      setScanResult(data)
+      useFarmStore.getState().setCvData(data)
     } catch (err) {
-      setIsScanning(false)
+      console.error('Failed to trigger auto-scan:', err)
     }
   }
 
-  const scenarioBreach = () => triggerScenario('breach')
+  const scenarioBreach = () => {
+    triggerScenario('breach')
+    useFarmStore.setState((state) => {
+      if (!state.sensors) return {}
+      const alertId = "environmental_breach_all_all"
+      const hasAlert = state.alerts.some(a => a.id === alertId && !a.resolved)
+      const newAlerts = hasAlert ? state.alerts : [
+        ...state.alerts.filter(a => a.id !== alertId),
+        {
+          id: alertId,
+          severity: 'critical' as const,
+          type: 'environmental_breach',
+          message: 'HVAC failure: Temperature and humidity beyond hardware compensation limits.',
+          actionRequired: true,
+          resolved: false,
+          timestamp: Date.now(),
+          target: 'environment' as const
+        }
+      ]
+      return {
+        sensors: { ...state.sensors, temp: 38.0, humidity: 90.0 },
+        alerts: newAlerts,
+        toasts: [...state.toasts, { id: Math.random().toString(), message: "Alert: HVAC failure detected!", type: 'error' }]
+      }
+    })
+  }
 
-  const calm = () => triggerScenario('normal')
+  const calm = () => {
+    triggerScenario('normal')
+    useFarmStore.setState((state) => {
+      if (!state.sensors) return {}
+      return {
+        sensors: { ...state.sensors, temp: 24.3, humidity: 65.2, ph: 6.18, tankLevel: 85 },
+        cvData: state.cvData ? {
+          ...state.cvData,
+          diseases_detected: [],
+          nutrient_deficiencies: {
+            nitrogen: { detected: false, confidence: 0, severity_score: 0 },
+            phosphorus: { detected: false, confidence: 0, severity_score: 0 },
+            potassium: { detected: false, confidence: 0, severity_score: 0 }
+          }
+        } : null,
+        alerts: [],
+        toasts: [...state.toasts, { id: Math.random().toString(), message: "System baseline successfully restored.", type: 'success' }]
+      }
+    })
+  }
 
   return (
     <>
@@ -67,7 +156,7 @@ function DemoController() {
             initial={{ opacity: 0, scale: 0.9, x: -20 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -20 }}
-            className="fixed bottom-8 left-8 z-[100] w-80 overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur-3xl"
+            className="fixed bottom-8 left-8 z-[100] w-80 max-h-[85vh] overflow-y-auto custom-scrollbar rounded-[32px] border border-white/10 bg-slate-950/95 p-1 shadow-2xl backdrop-blur-3xl"
           >
             <div className="flex flex-col">
               {/* Header */}
@@ -92,7 +181,7 @@ function DemoController() {
               </div>
 
               {/* Body */}
-              <div className="flex flex-col gap-2 p-4 max-h-[60vh] overflow-y-auto scrollbar-hide">
+              <div className="flex flex-col gap-2 p-4">
                 <button
                   onClick={scenarioDepletion}
                   className="group relative flex items-center justify-between rounded-2xl border border-blue-500/20 bg-blue-500/5 px-4 py-4 transition-all hover:bg-blue-500/10"
@@ -133,19 +222,6 @@ function DemoController() {
                 </button>
 
                 <button
-                  onClick={() => useFarmStore.getState().triggerLocalPHDrop()}
-                  className="group relative flex items-center justify-between rounded-2xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-4 transition-all hover:bg-indigo-500/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle size={18} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-                    <div className="flex flex-col items-start">
-                      <span className="text-sm font-bold text-indigo-100">pH Drop</span>
-                      <span className="text-[10px] text-indigo-400/70">Auto-fix Demo</span>
-                    </div>
-                  </div>
-                </button>
-
-                <button
                   onClick={scenarioBreach}
                   className="group relative flex items-center justify-between rounded-2xl border border-rose-500/20 bg-rose-500/5 px-4 py-4 transition-all hover:bg-rose-500/10"
                 >
@@ -158,6 +234,71 @@ function DemoController() {
                   </div>
                   <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
                 </button>
+
+                {/* Collapsible Automated Task Section */}
+                <div className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden">
+                  <button
+                    onClick={() => setAutoOpen(!autoOpen)}
+                    className="flex w-full items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 transition-colors"
+                  >
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-300">Automated Tasks</span>
+                    {autoOpen ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
+                  </button>
+
+                  <div className={`${autoOpen ? 'flex' : 'hidden'} flex-col gap-2 p-3 border-t border-white/5 bg-black/40`}>
+                    <button
+                      onClick={() => useFarmStore.getState().triggerLocalPHDrop()}
+                      className="group relative flex items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-3 py-3 transition-all hover:bg-indigo-500/10"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <AlertTriangle size={16} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                        <div className="flex flex-col items-start">
+                          <span className="text-xs font-bold text-indigo-100">pH Drop Simulation</span>
+                          <span className="text-[9px] text-indigo-400/70">Triggers auto-dosing recovery</span>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => useFarmStore.getState().triggerNutrientDepletion('nitrogen')}
+                      className="group flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-3 transition-all hover:bg-amber-500/10"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <AlertTriangle size={16} className="text-amber-400 group-hover:scale-110 transition-transform animate-pulse" />
+                        <div className="flex flex-col items-start">
+                          <span className="text-[11px] font-bold text-amber-100">Deplete N</span>
+                          <span className="text-[8px] text-amber-400/70">Auto recovery</span>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => useFarmStore.getState().triggerNutrientDepletion('phosphorus')}
+                      className="group flex items-center justify-between rounded-xl border border-purple-500/20 bg-purple-500/5 px-3 py-3 transition-all hover:bg-purple-500/10"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <AlertTriangle size={16} className="text-purple-400 group-hover:scale-110 transition-transform animate-pulse" />
+                        <div className="flex flex-col items-start">
+                          <span className="text-[11px] font-bold text-purple-100">Deplete P</span>
+                          <span className="text-[8px] text-purple-400/70">Auto recovery</span>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => useFarmStore.getState().triggerNutrientDepletion('potassium')}
+                      className="group flex items-center justify-between rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-3 transition-all hover:bg-orange-500/10"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <AlertTriangle size={16} className="text-orange-400 group-hover:scale-110 transition-transform animate-pulse" />
+                        <div className="flex flex-col items-start">
+                          <span className="text-[11px] font-bold text-orange-100">Deplete K</span>
+                          <span className="text-[8px] text-orange-400/70">Auto recovery</span>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
 
                 <button
                   onClick={calm}
@@ -191,110 +332,6 @@ function DemoController() {
         )}
       </AnimatePresence>
 
-      {typeof document !== 'undefined' && createPortal(
-        <>
-          <AnimatePresence>
-            {isScanning && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto"
-              >
-                <div className="relative w-full max-w-2xl rounded-3xl border border-emerald-500/30 bg-slate-900/90 p-8 shadow-2xl">
-                  <div className="flex flex-col items-center justify-center py-12 gap-6">
-                    <div className="relative flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-full border-t-2 border-emerald-500 animate-spin" style={{ width: '64px', height: '64px' }} />
-                      <div className="h-16 w-16 rounded-full border-4 border-emerald-500/20" />
-                    </div>
-                    <p className="text-xl font-bold tracking-[0.2em] uppercase text-emerald-400 animate-pulse">
-                      📸 Camera scanning Rack 3...
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {scanResult && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 pointer-events-auto"
-              >
-                <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-rose-500/30 bg-slate-900/90 shadow-2xl backdrop-blur-xl">
-                  {/* Header */}
-                  <div className="flex items-center justify-between border-b border-rose-500/20 bg-rose-500/10 px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400">
-                        <AlertTriangle size={24} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white uppercase tracking-wider">Biological Threat Detected</h3>
-                        <p className="text-xs text-rose-400">Automated Vision Analysis</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setScanResult(null)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex flex-col md:flex-row gap-6 p-6">
-                    {/* Image */}
-                    <div className="w-full md:w-1/2 relative rounded-2xl overflow-hidden border border-white/10">
-                      <img
-                        src={scanResult.image_url}
-                        alt="Plant scan"
-                        className="w-full h-full object-cover aspect-video md:aspect-square"
-                      />
-                      <div className="absolute inset-0 bg-rose-500/10 mix-blend-overlay pointer-events-none" />
-                    </div>
-
-                    {/* Details */}
-                    <div className="w-full md:w-1/2 flex flex-col gap-4">
-                      <div className="rounded-xl bg-black/40 p-4 border border-white/5">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Analysis Result</h4>
-                        <div className="flex flex-col gap-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-300">Disease</span>
-                            <span className="font-bold text-rose-400">{scanResult.diseases_detected?.[0]?.name || 'Unknown'}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-300">Confidence</span>
-                            <span className="font-bold text-white">
-                              {((scanResult.diseases_detected?.[0]?.confidence || 0) * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-slate-300">Growth Stage</span>
-                            <span className="font-bold text-emerald-400 capitalize">{scanResult.growth_stage}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl bg-black/40 p-4 border border-white/5 flex-1">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Recommendations</h4>
-                        <ul className="list-disc pl-4 text-sm text-slate-300 space-y-1">
-                          {scanResult.recommendations?.map((rec: string, i: number) => (
-                            <li key={i}>{rec}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>,
-        document.body
-      )}
     </>
   )
 }

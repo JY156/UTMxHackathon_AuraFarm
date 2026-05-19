@@ -16,7 +16,6 @@ import JSONImporter from './JSONImporter'
 import DemoController from './DemoController'
 import ToastSystem from './ToastSystem'
 import ComponentDetails from './ComponentDetails'
-import AIInsightsTab from './AIInsightsTab'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 
@@ -113,7 +112,6 @@ function DashboardLayout() {
     { id: 'monitor' as const, label: 'Live Monitor', icon: Radio },
     { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
     { id: 'ai' as const, label: 'AI & Config', icon: Bot },
-    { id: 'harvest' as const, label: 'Harvest & AI', icon: Leaf },
   ]
 
   return (
@@ -300,9 +298,6 @@ function DashboardLayout() {
                         <AIPanel />
                         <JSONImporter />
                       </div>
-                    )}
-                    {activeTab === 'harvest' && (
-                      <AIInsightsTab />
                     )}
                   </motion.div>
                 )}
