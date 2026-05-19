@@ -432,7 +432,7 @@ function DashboardLayout() {
                   animate={{ scale: 1, opacity: 1, y: 0 }}
                   exit={{ scale: 0.95, opacity: 0, y: 20 }}
                   transition={{ type: 'spring', duration: 0.5 }}
-                  className="relative w-full max-w-lg rounded-[36px] border border-white/10 bg-[#080d1a]/95 p-8 shadow-2xl backdrop-blur-3xl"
+                  className="relative w-full max-w-6xl rounded-[40px] border border-white/10 bg-black/60 p-8 shadow-[0_32px_100px_rgba(0,0,0,0.65)] backdrop-blur-3xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
