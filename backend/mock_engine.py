@@ -76,33 +76,94 @@ async def telemetry_generator():
             pass
         alerts = []
         # Collect and clear shared actions
+        actions = list(SHARED_ACTIONS)        # Collect and clear shared actions
         actions = list(SHARED_ACTIONS)
         SHARED_ACTIONS.clear()
         
-        # Calculate current pump logic early for tank drain physics
+        # 1. Retrieve mode and overrides
         auto_mode = SHARED_OVERRIDE.get("autoMode", True)
+        led_mode = SHARED_OVERRIDE.get("led_mode", "full")
+
+        # 2. Automated Controller Closed-Loop Decision Matrix (if autoMode is active)
+        if auto_mode:
+            # Temperature regulation (target 21.0 - 24.0°C)
+            if SIM_STATE["temp"] > 24.5:
+                SHARED_OVERRIDE["fan"] = "on"
+            elif SIM_STATE["temp"] <= 22.0:
+                SHARED_OVERRIDE["fan"] = "off"
+                
+            # Soil moisture regulation (target 45% - 60%)
+            if SIM_STATE["moisture"] < 45.0:
+                SHARED_OVERRIDE["pump"] = "on"
+            elif SIM_STATE["moisture"] >= 60.0:
+                SHARED_OVERRIDE["pump"] = "off"
+                
+            # Relative humidity regulation (target 55% - 65%)
+            if SIM_STATE["humidity"] < 55.0:
+                SHARED_OVERRIDE["mist"] = "on"
+            elif SIM_STATE["humidity"] >= 65.0:
+                SHARED_OVERRIDE["mist"] = "off"
+
+            # Hydroponic pH regulation (target 6.0 - 6.4)
+            if SIM_STATE["ph"] > 6.4:
+                SHARED_OVERRIDE["valveAcidic"] = True
+                SHARED_OVERRIDE["valveAlkaline"] = False
+            elif SIM_STATE["ph"] < 6.0:
+                SHARED_OVERRIDE["valveAcidic"] = False
+                SHARED_OVERRIDE["valveAlkaline"] = True
+            else:
+                SHARED_OVERRIDE["valveAcidic"] = False
+                SHARED_OVERRIDE["valveAlkaline"] = False
+
+            # Dosing Valves Regulation for Crop Nutrition (NPK)
+            if SIM_STATE["nitrogen"] < 100.0:
+                SHARED_OVERRIDE["valveN"] = True
+            elif SIM_STATE["nitrogen"] >= 120.0:
+                SHARED_OVERRIDE["valveN"] = False
+
+            if SIM_STATE["phosphorus"] < 35.0:
+                SHARED_OVERRIDE["valveP"] = True
+            elif SIM_STATE["phosphorus"] >= 40.0:
+                SHARED_OVERRIDE["valveP"] = False
+
+            if SIM_STATE["potassium"] < 155.0:
+                SHARED_OVERRIDE["valveK"] = True
+            elif SIM_STATE["potassium"] >= 180.0:
+                SHARED_OVERRIDE["valveK"] = False
+
+        # 3. Retrieve resolved actuator baseline states
         if not auto_mode:
+            fan_state = SHARED_OVERRIDE.get("fan", "off")
+            mist_state = SHARED_OVERRIDE.get("mist", "off")
             current_pump = SHARED_OVERRIDE.get("pump", "off")
         else:
-            current_pump = "on" if SIM_STATE["moisture"] < 45.0 else "off"
-            if drama_type == "depletion":
-                current_pump = "on"
-            if drama_type == "breach":
-                current_pump = "on"
+            fan_state = SHARED_OVERRIDE.get("fan", "off")
+            mist_state = SHARED_OVERRIDE.get("mist", "off")
+            current_pump = SHARED_OVERRIDE.get("pump", "off")
+            
+        # 4. Scenario-specific overrides
+        if drama_type == "depletion":
+            current_pump = "on"
+        elif drama_type == "breach":
+            fan_state = "on"
+            mist_state = "on"
+            current_pump = "on"
+        elif drama_type == "failure":
+            fan_state = "off"  # Fan is unresponsive
 
-        # 1. Drain Logic
+        # 5. Reservoir Drain Physics & Pump protection
         if drama_type == "depletion":
             SIM_STATE["tank_level"] = max(0.0, SIM_STATE["tank_level"] - 35.0)
         elif current_pump == "on":
             SIM_STATE["tank_level"] = max(0.0, SIM_STATE["tank_level"] - 0.5)
 
-        # 2. Dry-Run Protection: Forcibly override the pump to OFF if level is too low
+        # Dry-run protection
         if SIM_STATE["tank_level"] < 10.0:
             if current_pump == "on":
-                SHARED_ACTIONS.append("Alert: Dry-run protection active. Pump disabled.")
+                actions.append("Alert: Dry-run protection active. Pump disabled.")
             current_pump = "off"
 
-        # 3. Dynamic Alert Trigger (using proper Alert objects)
+        # 6. Reservoir Alerts Trigger
         if SIM_STATE["tank_level"] <= 15.0:
             alert = create_alert(
                 alert_type="resource_depletion",
@@ -112,13 +173,14 @@ async def telemetry_generator():
                 target="tank"
             )
             alerts.append(alert)
-            
-        # 4. Auto-Resolve when refilled
+
+        # Auto-Resolve when refilled
         alert_id_depletion = "resource_depletion_all_all"
         if alert_id_depletion in ACTIVE_ALERTS and SIM_STATE["tank_level"] > 25.0:
             ACTIVE_ALERTS.pop(alert_id_depletion, None)
             actions.append(f"RESOLVE_ALERT:{alert_id_depletion}")
-        
+
+        # 7. Scenario overrides to Sensor readings (e.g. breach, failure, biological)
         if drama_type == "breach":
             SIM_STATE["temp"] = 38.0
             SIM_STATE["humidity"] = 90.0
@@ -142,7 +204,6 @@ async def telemetry_generator():
             )
             alerts.append(alert)
         elif drama_type == "depletion":
-            # Tank drains rapidly (handled above), but let's also drop moisture since pump is off due to dry-run
             SIM_STATE["moisture"] = round(max(10.0, SIM_STATE["moisture"] - random.uniform(1.0, 3.0)), 1)
             SIM_STATE["ph"] = round(min(7.5, SIM_STATE["ph"] + random.uniform(0.05, 0.15)), 2)
         elif drama_type == "biological":
@@ -157,7 +218,7 @@ async def telemetry_generator():
             )
             alerts.append(alert)
         elif drama_type == "normal":
-            # Normal recovery - reset all sensors immediately to their healthy baseline
+            # Normal recovery - reset all simulation variables instantly
             global LATEST_CV_DATA
             SIM_STATE["tank_level"] = 85.0
             SIM_STATE["temp"] = 23.0
@@ -169,56 +230,124 @@ async def telemetry_generator():
             SIM_STATE["potassium"] = 180.0
             ACTIVE_ALERTS.clear()
             LATEST_CV_DATA = None
-            SHARED_OVERRIDE["drama"] = None  # Instantly complete normal scenario
-            # Clear all valves as well on reset
+            SHARED_OVERRIDE["drama"] = None  # Complete scenario
             SHARED_OVERRIDE["valveN"] = False
             SHARED_OVERRIDE["valveP"] = False
             SHARED_OVERRIDE["valveK"] = False
             SHARED_OVERRIDE["valveAcidic"] = False
             SHARED_OVERRIDE["valveAlkaline"] = False
         else:
-            # When None/Scenario, apply high-fidelity mean-reverting drift to prevent runaway/stuck values
-            # Reversion target: Temp=23.0, Moisture=50.0, Humidity=60.0, pH=6.20
+            # --- HIGH FIDELITY PHYSICS FEEDBACK SIMULATOR ---
+            # Handles natural drift AND response physics when actuators are on or off!
             
-            # 1. Temperature Drift (target 23.0°C)
+            # A. Temperature physics:
+            # - If fan is ON: cools down toward 21.5°C
+            # - If fan is OFF: heats up from grow lights towards 29.5°C
             t_current = SIM_STATE["temp"]
-            t_new = t_current + (23.0 - t_current) * 0.05 + random.uniform(-0.1, 0.1)
-            SIM_STATE["temp"] = round(max(20.0, min(25.0, t_new)), 1)
-            
-            # 2. pH Drift (target 6.20) - Suppress during active pH drop scenario
+            if fan_state == "on":
+                t_target = 21.5
+                t_delta = -0.15
+            else:
+                t_target = 29.5
+                t_delta = 0.1
+            t_new = t_current + (t_target - t_current) * 0.04 + t_delta + random.uniform(-0.07, 0.07)
+            SIM_STATE["temp"] = round(max(15.0, min(38.0, t_new)), 1)
+
+            # B. Moisture physics:
+            # - If pump is ON: moisture rises towards 75.0%
+            # - If pump is OFF: moisture dries out towards 30.0%
+            m_current = SIM_STATE["moisture"]
+            if current_pump == "on":
+                m_target = 75.0
+                m_delta = 0.9
+            else:
+                m_target = 30.0
+                m_delta = -0.2
+            m_new = m_current + (m_target - m_current) * 0.04 + m_delta + random.uniform(-0.15, 0.15)
+            SIM_STATE["moisture"] = round(max(10.0, min(90.0, m_new)), 1)
+
+            # C. Humidity physics:
+            # - If mist is ON: humidity rises towards 85.0%
+            # - If mist is OFF: humidity dries towards 42.0%
+            h_current = SIM_STATE["humidity"]
+            if mist_state == "on":
+                h_target = 85.0
+                h_delta = 0.6
+            else:
+                h_target = 42.0
+                h_delta = -0.3
+            h_new = h_current + (h_target - h_current) * 0.04 + h_delta + random.uniform(-0.1, 0.1)
+            SIM_STATE["humidity"] = round(max(25.0, min(95.0, h_new)), 1)
+
+            # D. pH physics (only apply physics if NOT running the active "ph_drop" simulation sequence):
+            # - If valveAcidic is ON: pH drops towards 5.4
+            # - If valveAlkaline is ON: pH rises towards 7.2
+            # - If both OFF: pH slowly drifts upwards towards 6.8
             if drama_type != "ph_drop":
                 ph_current = SIM_STATE["ph"]
-                ph_new = ph_current + (6.20 - ph_current) * 0.05 + random.uniform(-0.02, 0.02)
-                SIM_STATE["ph"] = round(max(5.8, min(6.6, ph_new)), 2)
-            
-            # 3. Moisture Drift (target 50.0%)
-            m_current = SIM_STATE["moisture"]
-            m_new = m_current + (50.0 - m_current) * 0.05 + random.uniform(-0.5, 0.5)
-            SIM_STATE["moisture"] = round(max(45.0, min(55.0, m_new)), 1)
-            
-            # 4. Humidity Drift (target 60.0%)
-            h_current = SIM_STATE["humidity"]
-            h_new = h_current + (60.0 - h_current) * 0.05 + random.uniform(-0.5, 0.5)
-            SIM_STATE["humidity"] = round(max(55.0, min(65.0, h_new)), 1)
-            # N/P/K values are set directly by scenario tasks in main.py,
-            # so no random drift is applied to SIM_STATE["nitrogen"] etc. here.
+                if SHARED_OVERRIDE.get("valveAcidic", False):
+                    ph_target = 5.4
+                    ph_delta = -0.045
+                elif SHARED_OVERRIDE.get("valveAlkaline", False):
+                    ph_target = 7.2
+                    ph_delta = 0.045
+                else:
+                    ph_target = 6.8
+                    ph_delta = 0.005  # natural alkaline drift
+                ph_new = ph_current + (ph_target - ph_current) * 0.03 + ph_delta + random.uniform(-0.005, 0.005)
+                SIM_STATE["ph"] = round(max(4.2, min(8.8, ph_new)), 2)
+
+            # E. Nutrient (N-P-K) physics (only apply physics if NOT running the specific nutrient depletion scenario sequence):
+            # Nitrogen (N)
+            if drama_type != "nitrogen_depletion":
+                n_current = SIM_STATE["nitrogen"]
+                if SHARED_OVERRIDE.get("valveN", False):
+                    n_target = 125.0
+                    n_delta = 1.25
+                else:
+                    n_target = 30.0
+                    n_delta = -0.15  # continuous crop consumption
+                n_new = n_current + (n_target - n_current) * 0.03 + n_delta
+                SIM_STATE["nitrogen"] = round(max(20.0, min(150.0, n_new)), 1)
+
+            # Phosphorus (P)
+            if drama_type != "phosphorus_depletion":
+                p_current = SIM_STATE["phosphorus"]
+                if SHARED_OVERRIDE.get("valveP", False):
+                    p_target = 42.0
+                    p_delta = 0.5
+                else:
+                    p_target = 8.0
+                    p_delta = -0.05
+                p_new = p_current + (p_target - p_current) * 0.03 + p_delta
+                SIM_STATE["phosphorus"] = round(max(5.0, min(55.0, p_new)), 1)
+
+            # Potassium (K)
+            if drama_type != "potassium_depletion":
+                k_current = SIM_STATE["potassium"]
+                if SHARED_OVERRIDE.get("valveK", False):
+                    k_target = 185.0
+                    k_delta = 1.75
+                else:
+                    k_target = 50.0
+                    k_delta = -0.2
+                k_new = k_current + (k_target - k_current) * 0.03 + k_delta
+                SIM_STATE["potassium"] = round(max(30.0, min(220.0, k_new)), 1)
+
         # Auto-clear mechanical/environmental alerts after 60 seconds
         for alert in alerts:
             if hasattr(alert, "type") and alert.type in ['mechanical_failure', 'environmental_breach']:
                 alert_id = alert.id
-                # Schedule auto-clear safely
                 try:
                     loop = asyncio.get_running_loop()
                     loop.create_task(auto_clear_alert(alert_id, 60))
                 except RuntimeError:
-                    # Fallback if no running loop
                     pass
             
         # Deduplication and Cooldown Logic
         new_alerts = []
         current_time = time.time()
         for alert in alerts:
-            # Alert is already an Alert object from create_alert()
             alert_id = alert.id if hasattr(alert, "id") else alert.get("id")
             
             # Check cooldown
@@ -235,29 +364,11 @@ async def telemetry_generator():
                 SHARED_ACTIONS.append(f"Alert: New critical issue - {alert.message if hasattr(alert, 'message') else alert.get('message')}")
         alerts = new_alerts
         
-        # Actuator state setup based on drama
-        led_mode = SHARED_OVERRIDE.get("led_mode", "full")
-        
-        # Determine baseline actuator states
-        if not auto_mode:
-            fan_state = SHARED_OVERRIDE.get("fan", "off")
-            mist_state = SHARED_OVERRIDE.get("mist", "off")
-        else:
-            fan_state = "on" if SIM_STATE["temp"] > 26.0 else "off"
-            mist_state = "on" if random.random() > 0.85 else "off"
-            
-        # Drama forces actuators ON regardless of auto_mode to show crisis
-        if drama_type == "failure":
-            fan_state = "off" # Fan is physically broken, so it stops spinning
-        if drama_type == "breach":
-            fan_state = "on"
-            mist_state = "on"
-            current_pump = "on"  # Ensure pump is also running to try to compensate
-
+        # Actuator state setup
         actuators = Actuators(
             cooling_fan=fan_state,
             exhaust_fan=mist_state,
-            water_pump=current_pump,  # Note: Overridden by dry-run protection earlier if tank is empty
+            water_pump=current_pump,  # Overridden by dry-run protection earlier if tank is empty
             led_intensity_pct=100 if led_mode != "off" else 0,
             valveN=SHARED_OVERRIDE.get("valveN", False),
             valveP=SHARED_OVERRIDE.get("valveP", False),
