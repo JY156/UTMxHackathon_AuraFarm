@@ -12,7 +12,7 @@ DEMO_CV_CACHE = {
         "nutrient_deficiencies": {
             "nitrogen": {"detected": False, "confidence": 0.88, "severity_score": 0.12},
             "phosphorus": {"detected": False, "confidence": 0.91, "severity_score": 0.08},
-            "potassium": {"detected": True, "confidence": 0.76, "severity_score": 0.52}
+            "potassium": {"detected": False, "confidence": 0.76, "severity_score": 0.52}
         },
         "diseases_detected": [
             {
@@ -40,7 +40,7 @@ DEMO_CV_CACHE = {
         "growth_stage": "mature",
         "image_url": "/demo-images/lettuce-fungal.jpg",
         "nutrient_deficiencies": {
-            "nitrogen": {"detected": True, "confidence": 0.82, "severity_score": 0.58},
+            "nitrogen": {"detected": False, "confidence": 0.82, "severity_score": 0.58},
             "phosphorus": {"detected": False, "confidence": 0.87, "severity_score": 0.22},
             "potassium": {"detected": False, "confidence": 0.89, "severity_score": 0.18}
         },

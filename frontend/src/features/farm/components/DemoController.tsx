@@ -95,8 +95,52 @@ function DemoController() {
       const res = await fetch('http://localhost:8000/api/demo/auto-scan', { method: 'POST' })
       const data = await res.json()
       useFarmStore.getState().setCvData(data)
+
+      // Automated biological response: turn on fan + mist as preventive spray
+      // Add a local alert scoped ONLY to Rack 3
+      useFarmStore.setState((state) => {
+        const alertId = `biological_threat_3_0`
+        const hasAlert = state.alerts.some(a => a.id === alertId && !a.resolved)
+        const newAlerts = hasAlert ? state.alerts : [
+          ...state.alerts.filter(a => a.id !== alertId),
+          {
+            id: alertId,
+            severity: 'critical' as const,
+            type: 'biological_threat',
+            message: 'Leaf Rust detected on Rack 3. Prune and treat immediately.',
+            actionRequired: true,
+            resolved: false,
+            timestamp: Date.now(),
+            target: 'rack' as const,
+            rackId: 3,
+            shelf: 0,
+          }
+        ]
+        return {
+          alerts: newAlerts,
+          actuators: state.actuators ? { ...state.actuators, fan: true, mist: true } : state.actuators,
+          toasts: [
+            ...state.toasts,
+            { id: Math.random().toString(), message: '🔴 Alert: Leaf Rust detected on Rack 3!', type: 'error' as const },
+            { id: Math.random().toString(), message: '💨 Auto-response: Fan ON — reducing humidity to slow spore spread.', type: 'info' as const },
+            { id: Math.random().toString(), message: '💧 Auto-response: Mist ON — pathogen suppression spray activated.', type: 'info' as const },
+          ]
+        }
+      })
+      // Also sync fan + mist state to backend so it persists over WebSocket
+      fetch('http://localhost:8000/api/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actuator: 'fan', state: 'on', autoMode: false })
+      }).catch(() => null)
+      fetch('http://localhost:8000/api/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actuator: 'mist', state: 'on', autoMode: false })
+      }).catch(() => null)
     } catch (err) {
       console.error('Failed to trigger auto-scan:', err)
+      addToast('Failed to trigger Leaf Rust scenario', 'error')
     }
   }
 
