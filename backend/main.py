@@ -24,7 +24,8 @@ from google.genai import types
 
 # --- Local imports ---
 from schemas import WebSocketPayload, Alert, Severity
-from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS, LATEST_CV_DATA, STATE_CHANGED_EVENT
+import mock_engine
+from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS, STATE_CHANGED_EVENT
 from data_source import DataSource
 from demo_cv_cache import DEMO_CV_CACHE  # ← Your pre-analyzed demo responses
 
@@ -95,19 +96,22 @@ def root():
 async def trigger_scenario(type: str):
     """Triggers predefined drama scenarios for demo purposes"""
 
-    global LATEST_CV_DATA
-
     print(f"🎬 Demo scenario triggered: {type}")
+    try:
+        with open("c:\\Users\\user\\Desktop\\My Files\\code\\3 hackathon\\UTMxHackathon_AuraFarm\\debug.log", "a", encoding="utf-8") as f:
+            f.write(f"[{datetime.now()}] TRIGGER_SCENARIO: type={type}\n")
+    except Exception:
+        pass
     
     # Clear previous drama
-    SHARED_OVERRIDE["drama"] = None
+    SHARED_OVERRIDE["drama"] = type
     await asyncio.sleep(0.1)
     
     # Scenario-specific logic
     if type == "biological_threat":
         # Auto-load pre-analyzed CV response
         cv_result = DEMO_CV_CACHE.get("bacterial_leaf_spot", DEMO_CV_CACHE["healthy"])
-        LATEST_CV_DATA = cv_result.copy()
+        mock_engine.LATEST_CV_DATA = cv_result.copy()
         SHARED_OVERRIDE["cv_data"] = cv_result
         
         # Auto-create alert if disease detected
@@ -153,16 +157,149 @@ async def trigger_scenario(type: str):
         import mock_engine
         mock_engine.SIM_STATE["temp"] = 38.0
         mock_engine.SIM_STATE["humidity"] = 92.0
-    
+
+    elif type == "ph_drop":
+        async def run_ph_simulation():
+            import mock_engine
+            # Stage 1: pH Drop
+            try:
+                with open("c:\\Users\\user\\Desktop\\My Files\\code\\3 hackathon\\UTMxHackathon_AuraFarm\\debug.log", "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now()}] run_ph_simulation: Starting drop to 4.8\n")
+            except Exception:
+                pass
+            mock_engine.SIM_STATE["ph"] = 4.8
+            mock_engine.SHARED_ACTIONS.append("Alert: pH dropped to 4.8! Alerting automation controller...")
+            mock_engine.STATE_CHANGED_EVENT.set()
+            
+            # Stage 2: 6s later, activate pump
+            await asyncio.sleep(6.0)
+            drama_cur = mock_engine.SHARED_OVERRIDE.get("drama")
+            try:
+                with open("c:\\Users\\user\\Desktop\\My Files\\code\\3 hackathon\\UTMxHackathon_AuraFarm\\debug.log", "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now()}] run_ph_simulation: Woke up after 6s. Active drama={drama_cur}\n")
+            except Exception:
+                pass
+            if drama_cur != "ph_drop":
+                try:
+                    with open("c:\\Users\\user\\Desktop\\My Files\\code\\3 hackathon\\UTMxHackathon_AuraFarm\\debug.log", "a", encoding="utf-8") as f:
+                        f.write(f"[{datetime.now()}] run_ph_simulation: Interrupted/cancelled because drama={drama_cur}\n")
+                except Exception:
+                    pass
+                return # Scenario reset/interrupted
+            mock_engine.SHARED_OVERRIDE["valveAlkaline"] = True
+            mock_engine.SHARED_ACTIONS.append("Dosing pump active: Injecting Alkaline buffer...")
+            mock_engine.STATE_CHANGED_EVENT.set()
+            
+            # Smoothly recover pH over 6 seconds (12 steps of 0.5 seconds each)
+            steps = 12
+            for i in range(steps):
+                await asyncio.sleep(0.5)
+                drama_cur = mock_engine.SHARED_OVERRIDE.get("drama")
+                if drama_cur != "ph_drop":
+                    try:
+                        with open("c:\\Users\\user\\Desktop\\My Files\\code\\3 hackathon\\UTMxHackathon_AuraFarm\\debug.log", "a", encoding="utf-8") as f:
+                            f.write(f"[{datetime.now()}] run_ph_simulation: Interrupted in drift step {i} because drama={drama_cur}\n")
+                    except Exception:
+                        pass
+                    return # Scenario reset/interrupted
+                mock_engine.SIM_STATE["ph"] = round(4.8 + (6.2 - 4.8) * (i + 1) / steps, 2)
+                mock_engine.STATE_CHANGED_EVENT.set()
+            
+            # Stage 3: After it reaches 6.2, stabilize
+            mock_engine.SHARED_OVERRIDE["valveAlkaline"] = False
+            mock_engine.SHARED_ACTIONS.append("pH stabilized at 6.2! Number is normal.")
+            try:
+                with open("c:\\Users\\user\\Desktop\\My Files\\code\\3 hackathon\\UTMxHackathon_AuraFarm\\debug.log", "a", encoding="utf-8") as f:
+                    f.write(f"[{datetime.now()}] run_ph_simulation: Stabilized pH at 6.2 successfully.\n")
+            except Exception:
+                pass
+            if mock_engine.SHARED_OVERRIDE.get("drama") == "ph_drop":
+                mock_engine.SHARED_OVERRIDE["drama"] = None
+            mock_engine.STATE_CHANGED_EVENT.set()
+
+        asyncio.create_task(run_ph_simulation())
+
+    elif type in ["nitrogen_depletion", "phosphorus_depletion", "potassium_depletion"]:
+        nutrient = type.split("_")[0]  # nitrogen, phosphorus, potassium
+        cap_name = nutrient.capitalize()
+        cap_letter = "N" if nutrient == "nitrogen" else "P" if nutrient == "phosphorus" else "K"
+        valve_key = "valveN" if nutrient == "nitrogen" else "valveP" if nutrient == "phosphorus" else "valveK"
+        
+        async def run_nutrient_simulation():
+            import mock_engine
+            # Set the initial low level for telemetry
+            start_val = 45.0 if nutrient == "nitrogen" else 10.0 if nutrient == "phosphorus" else 60.0
+            target_val = 120.0 if nutrient == "nitrogen" else 40.0 if nutrient == "phosphorus" else 180.0
+            
+            mock_engine.SIM_STATE[nutrient] = start_val
+            
+            # Stage 1: Depletion detected
+            # Set deficiency in mock_engine.LATEST_CV_DATA
+            if not mock_engine.LATEST_CV_DATA:
+                mock_engine.LATEST_CV_DATA = {
+                    "crop_type": "lettuce",
+                    "overall_health": "healthy",
+                    "growth_stage": "vegetative",
+                    "nutrient_deficiencies": {
+                        "nitrogen": {"detected": False, "confidence": 0, "severity_score": 0},
+                        "phosphorus": {"detected": False, "confidence": 0, "severity_score": 0},
+                        "potassium": {"detected": False, "confidence": 0, "severity_score": 0}
+                    },
+                    "diseases_detected": [],
+                    "visual_symptoms": [],
+                    "recommendations": []
+                }
+            
+            mock_engine.LATEST_CV_DATA["nutrient_deficiencies"] = mock_engine.LATEST_CV_DATA.get("nutrient_deficiencies", {})
+            mock_engine.LATEST_CV_DATA["nutrient_deficiencies"][nutrient] = {
+                "detected": True,
+                "confidence": 0.91,
+                "severity_score": 0.85
+            }
+            mock_engine.SHARED_ACTIONS.append(f"Alert: Low {cap_name} levels detected!")
+            mock_engine.STATE_CHANGED_EVENT.set()
+            
+            # Stage 2: 6s later, activate dosing pump
+            await asyncio.sleep(6.0)
+            if mock_engine.SHARED_OVERRIDE.get("drama") != type:
+                return # Interrupted
+            mock_engine.SHARED_OVERRIDE[valve_key] = True
+            mock_engine.SHARED_ACTIONS.append(f"Dosing pump {cap_letter} active: Adding {cap_name if nutrient != 'nitrogen' else 'N'} solution...")
+            mock_engine.STATE_CHANGED_EVENT.set()
+            
+            # Smoothly recover nutrient over 6 seconds (12 steps of 0.5 seconds each)
+            steps = 12
+            for i in range(steps):
+                await asyncio.sleep(0.5)
+                if mock_engine.SHARED_OVERRIDE.get("drama") != type:
+                    return # Interrupted
+                mock_engine.SIM_STATE[nutrient] = round(start_val + (target_val - start_val) * (i + 1) / steps, 1)
+                mock_engine.STATE_CHANGED_EVENT.set()
+            
+            # Stage 3: After it reaches target, stabilize
+            mock_engine.LATEST_CV_DATA["nutrient_deficiencies"][nutrient] = {
+                "detected": False,
+                "confidence": 0.99,
+                "severity_score": 0
+            }
+            mock_engine.SHARED_OVERRIDE[valve_key] = False
+            mock_engine.SHARED_ACTIONS.append(f"{cap_name} stabilized: Normal already! Veggies color restored.")
+            if mock_engine.SHARED_OVERRIDE.get("drama") == type:
+                mock_engine.SHARED_OVERRIDE["drama"] = None
+            mock_engine.STATE_CHANGED_EVENT.set()
+            
+        asyncio.create_task(run_nutrient_simulation())
+
     SHARED_OVERRIDE["drama"] = type
+    # Always fire the event so the generator wakes and picks up the new drama state.
+    # The generator clears it after waking, so no race condition.
     STATE_CHANGED_EVENT.set()
-    STATE_CHANGED_EVENT.clear()
     
     return {
         "status": "scenario_queued", 
         "scenario": type,
         "cv_auto_scanned": type == "biological_threat",
-        "image_url": LATEST_CV_DATA.get("image_url") if LATEST_CV_DATA else None
+        "image_url": mock_engine.LATEST_CV_DATA.get("image_url") if mock_engine.LATEST_CV_DATA else None
     }
 
 # --- Alert Resolution ---
@@ -178,8 +315,7 @@ async def resolve_alert(payload: AlertResolve):
     
     # Check if resolving biological threat
     if payload.id.startswith("biological_threat") or payload.id.startswith("auto_scan_") or payload.id.startswith("vision_"):
-        global LATEST_CV_DATA
-        LATEST_CV_DATA = None
+        mock_engine.LATEST_CV_DATA = None
         if SHARED_OVERRIDE.get("drama") in ["biological", "biological_threat"]:
             SHARED_OVERRIDE["drama"] = None
             print("🎬 Biological threat resolved, returned to baseline.")
@@ -385,8 +521,7 @@ async def analyze_plant_vision(
 @app.post("/api/vision/webhook")
 async def vision_webhook(payload: dict):
     """Accepts pre-processed CV data from external systems"""
-    global LATEST_CV_DATA
-    LATEST_CV_DATA = payload
+    mock_engine.LATEST_CV_DATA = payload
     SHARED_OVERRIDE["cv_data"] = payload
     return {"status": "success", "message": "CV data ingested"}
 
@@ -397,13 +532,11 @@ async def auto_scan(
     shelf: int = Form(default=1),
     scenario: str = Form(default="bacterial_leaf_spot")
 ):
-    global LATEST_CV_DATA
-    
     # Get pre-analyzed response
     mock_cv = DEMO_CV_CACHE.get(scenario, DEMO_CV_CACHE["healthy"]).copy()
     
     # Store for WebSocket broadcast
-    LATEST_CV_DATA = mock_cv
+    mock_engine.LATEST_CV_DATA = mock_cv
     
     # Auto-create alert
     if mock_cv.get("overall_health") == "diseased":
@@ -548,8 +681,8 @@ async def websocket_endpoint(ws: WebSocket):
                 LATEST_STATE["moisture"] = sensors.get("moisture_pct", LATEST_STATE["moisture"])
             
             # Include CV data in payload
-            if LATEST_CV_DATA:
-                payload["cv_data"] = LATEST_CV_DATA
+            if mock_engine.LATEST_CV_DATA:
+                payload["cv_data"] = mock_engine.LATEST_CV_DATA
             
             if "alerts" not in payload:
                 payload["alerts"] = []

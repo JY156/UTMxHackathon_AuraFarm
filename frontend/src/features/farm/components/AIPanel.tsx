@@ -1,6 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
-import { TrendingUp, RefreshCw, BrainCircuit, Eye, Flame, AlertTriangle, CheckCircle, Loader2, ShieldCheck, X, Wallet, ExternalLink } from 'lucide-react'
+import { RefreshCw, BrainCircuit, Eye, Flame, AlertTriangle, CheckCircle, Loader2, ShieldCheck, X, Wallet, ExternalLink } from 'lucide-react'
+import { Canvas } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
+import { Lettuce } from '../models/Lettuce'
 import { useShallow } from 'zustand/react/shallow'
 import { useFarmStore } from '../../../store/useFarmStore'
 
@@ -177,8 +180,6 @@ function AIPanel() {
   }
 
   const strokeWidth = 8
-  const radius = 36
-  
 
   // 2. Profile-Bound Predictive Harvest Data
   const cropName = profile?.name || 'Lettuce'
@@ -249,6 +250,7 @@ function AIPanel() {
     })
   }
 
+
   return (
     <section className="flex flex-col gap-6">
       {/* Header */}
@@ -270,12 +272,18 @@ function AIPanel() {
         </button>
       </header>
 
-      {/* 2. Premium Expanded Display Cards (🥗 How is the Veg?, 📅 Harvest Prediction, 💰 Sales/Demand Analysis) */}
-      <div className="flex flex-col gap-5">
-        {/* Card 1: How is the veg? */}
-        <div className="flex flex-col md:flex-row items-center gap-6 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
-          {/* Left Column: Big SVG Circle Gauge */}
-          <div className="relative flex items-center justify-center shrink-0">
+      {/* 2. 3-Column Metrics Dashboard Widget Row */}
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
+        
+        {/* Card 1: Canopy Health */}
+        <div className="flex flex-col items-center gap-5 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
+          
+          <div className="flex items-center justify-between w-full border-b border-white/5 pb-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">🥗 Health Index</span>
+            <h4 className={`text-xs font-black ${healthColor.split(' ')[0]}`}>{healthLabel}</h4>
+          </div>
+
+          <div className="relative flex items-center justify-center">
             <svg className="h-28 w-28 -rotate-90">
               <circle
                 cx="56"
@@ -304,104 +312,144 @@ function AIPanel() {
               <span className="text-[8px] font-black uppercase text-slate-500 tracking-wider">Index</span>
             </div>
           </div>
-          
-          {/* Right Column: In-depth telemetry metrics */}
-          <div className="flex-1 min-w-0 w-full">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2.5">
-              <h4 className={`text-base font-black ${healthColor.split(' ')[0]}`}>{healthLabel}</h4>
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">🥗 How is the Veg?</span>
+
+          <p className="text-[11px] font-semibold leading-relaxed text-slate-300 text-center min-h-[32px]">
+            {hasLeafRust 
+              ? 'Pathogen detected on Rack 3. Suppression system fully active.' 
+              : activeDeficiencies > 0 
+                ? 'Canopy deficit detected. Automated nutrient dosing loop engaged.' 
+                : 'All foliage parameters, height, and chlorophyll are optimal.'}
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 w-full border-t border-white/5 pt-4">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Canopy Cover</span>
+              <span className="text-xs font-black text-white">{hasLeafRust ? '62.4%' : '98.5%'}</span>
             </div>
-            
-            <p className="mt-2.5 text-xs font-semibold leading-relaxed text-slate-300">
-              {hasLeafRust 
-                ? 'CRITICAL ALERT: Spore infestation on Rack 3 detected by Vision AI. Emergency automated pathogen suppression cycle is engaged. Manual removal of infected cups required.' 
-                : activeDeficiencies > 0 
-                  ? 'CV analysis indicates localized nutrient deficiencies on crop canopy. Nitrogen/Phosphorus tracking shows slight variance from baseline.' 
-                  : 'Vision AI reports standard lush leaf pigmentation, uniform crop height distribution, and 98% optimal density score.'}
-            </p>
-            
-            {/* Telemetry micro-grid */}
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Canopy Cover</span>
-                <span className="text-xs font-black text-white">{hasLeafRust ? '62.4%' : '98.5%'}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Chlorophyll</span>
-                <span className="text-xs font-black text-white">{hasLeafRust ? '28.2 SPAD' : '44.8 SPAD'}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Stomata Cond.</span>
-                <span className="text-xs font-black text-white">{hasLeafRust ? 'Low (Stress)' : 'Optimal'}</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Vision Status</span>
-                <span className={`text-xs font-black uppercase ${healthScore < 50 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                  {healthScore < 50 ? 'Pathology' : 'Healthy'}
-                </span>
-              </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Chlorophyll</span>
+              <span className="text-xs font-black text-white">{hasLeafRust ? '28.2 SPAD' : '44.8 SPAD'}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Stomata</span>
+              <span className="text-xs font-black text-white">{hasLeafRust ? 'Stress' : 'Optimal'}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Status</span>
+              <span className={`text-xs font-black uppercase ${healthScore < 50 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {healthScore < 50 ? 'Anomaly' : 'Optimal'}
+              </span>
             </div>
           </div>
+
         </div>
 
         {/* Card 2: Harvest Prediction */}
-        <div className="flex flex-col md:flex-row items-center gap-6 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
-          {/* Left Column: Big countdown metric */}
-          <div className="flex flex-col items-center justify-center shrink-0 w-28 h-28 rounded-2xl border border-white/5 bg-white/5 px-2">
-            <h3 className="text-2xl font-black text-white tracking-tight">{daysToHarvest} Days</h3>
-            <span className="mt-1 text-[8px] font-black uppercase tracking-wider text-slate-500 text-center">until harvest</span>
-            <div className="mt-2 flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-              <TrendingUp size={8} /> {velocityText}
+        <div className="flex flex-col items-center gap-5 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
+          
+          <div className="flex items-center justify-between w-full border-b border-white/5 pb-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">📅 Harvest Prediction</span>
+            <span className="text-xs font-bold text-slate-400">{cycleText}</span>
+          </div>
+
+          <div className="w-full h-40 rounded-3xl border border-white/5 bg-black/30 relative overflow-hidden flex items-center justify-center">
+            <Canvas camera={{ position: [0, 0.6, 1.35], fov: 40 }} className="absolute inset-0">
+              <ambientLight intensity={1.4} />
+              <directionalLight position={[4, 5, 4]} intensity={2.8} />
+              {/* Violet/Magenta Grow Light simulation */}
+              <pointLight position={[-3, 3, -2]} intensity={4.5} color="#d946ef" />
+              {/* Cool Cyan Accent Glow */}
+              <pointLight position={[3, 2, 3]} intensity={3.0} color="#06b6d4" />
+              <Lettuce 
+                growthStage={
+                  maturityPercent < 35 
+                    ? 'seedling' 
+                    : maturityPercent < 75 
+                      ? 'vegetative' 
+                      : 'harvest'
+                }
+                scale={2.4}
+                position={[0, -0.15, 0]}
+              />
+              <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={3.5} />
+            </Canvas>
+            
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent flex flex-col items-center justify-end pb-2.5 pointer-events-none">
+              <h3 className="text-base font-black text-white tracking-tight drop-shadow-md">{daysToHarvest} Days</h3>
+              <span className="text-[7px] font-black uppercase tracking-widest text-cyan-400 drop-shadow-md">to harvest</span>
             </div>
           </div>
 
-          {/* Right Column: Progress and Dynamic historical stats */}
-          <div className="flex-1 min-w-0 w-full">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-xs font-bold text-slate-300">{cycleText}</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">📅 Harvest Prediction</span>
+          <p className="text-[11px] font-semibold leading-relaxed text-slate-300 text-center min-h-[32px]">
+            Velocity at <span className="text-emerald-400 font-bold">{velocityText}</span>. Target crispness window predicted in {daysToHarvest} days.
+          </p>
+
+          <div className="flex flex-col gap-3 w-full border-t border-white/5 pt-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase text-slate-500">
+                <span>Maturity Progress</span>
+                <span className="text-white">{maturityPercent}%</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                <motion.div 
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${maturityPercent}%` }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                />
+              </div>
             </div>
 
-            <p className="mt-2.5 text-xs font-semibold leading-relaxed text-slate-300">
-              Crop growth velocity is tracking at <span className="text-emerald-400 font-bold">{velocityText}</span> based on multi-spectral camera metrics. Maturity curve calculations predict optimal harvest crispness in {daysToHarvest} days.
-            </p>
+            {/* Stage Indicators Timeline */}
+            <div className="flex items-center justify-between w-full relative pt-1 border-t border-white/5 pt-3">
+              <div className="absolute top-5 left-2 right-2 h-0.5 bg-white/5 z-0" />
+              {[
+                { label: 'Sprout', active: maturityPercent >= 0 },
+                { label: 'Veg', active: maturityPercent >= 35 },
+                { label: 'Mature', active: maturityPercent >= 75 },
+                { label: 'Harvest', active: maturityPercent >= 95 },
+              ].map((stage) => (
+                <div key={stage.label} className="flex flex-col items-center z-10 relative">
+                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${
+                    stage.active 
+                      ? 'bg-cyan-500/15 text-cyan-400 border-cyan-400/40 shadow-[0_0_8px_rgba(6,182,212,0.4)]' 
+                      : 'bg-black border-white/10 text-slate-600'
+                  }`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${stage.active ? 'bg-cyan-400' : 'bg-transparent'}`} />
+                  </div>
+                  <span className={`text-[8px] font-black uppercase mt-1 tracking-widest ${stage.active ? 'text-cyan-400' : 'text-slate-600'}`}>
+                    {stage.label}
+                  </span>
+                </div>
+              ))}
+            </div>
 
-            {/* Maturity bar & stats */}
-            <div className="mt-4 flex flex-col md:flex-row items-center gap-6">
-              <div className="flex-1 w-full space-y-1.5">
-                <div className="flex items-center justify-between text-[9px] font-bold uppercase text-slate-500">
-                  <span>Growth Progress</span>
-                  <span className="text-white">{maturityPercent}% maturity</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-                  <motion.div 
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${maturityPercent}%` }}
-                    transition={{ duration: 1.2, ease: 'easeOut' }}
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Alignment</span>
+                <span className="text-xs font-black text-white">94%</span>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 shrink-0 w-full md:w-auto">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hist. Benchmark</span>
-                  <span className="text-xs font-black text-white">94% Align</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Optimal Window</span>
-                  <span className="text-xs font-black text-cyan-400">May 22-24</span>
-                </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Window</span>
+                <span className="text-xs font-black text-cyan-400">May 22-24</span>
               </div>
             </div>
           </div>
+
         </div>
 
-        {/* Card 3: Sales/Demand Analysis */}
-        <div className="flex flex-col md:flex-row items-center gap-6 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
-          {/* Left Column: Big Revenue/Yield metric */}
-          <div className="flex flex-col items-center justify-center shrink-0 w-28 h-28 rounded-2xl border border-white/5 bg-white/5 p-2">
-            <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">Proj. Revenue</span>
+        {/* Card 3: Demand Analysis */}
+        <div className="flex flex-col items-center gap-5 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
+          
+          <div className="flex items-center justify-between w-full border-b border-white/5 pb-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">💰 Demand Analysis</span>
+            <span className="text-xs font-bold text-slate-400 truncate max-w-[120px]">
+              {cropName.toLowerCase().includes('basil') ? 'Premium Retail' : cropName.toLowerCase().includes('tomato') ? 'Wholesale Hub' : 'Direct Channel'}
+            </span>
+          </div>
+
+          <div className="flex flex-col items-center justify-center w-28 h-28 rounded-3xl border border-white/5 bg-white/5 p-2">
+            <span className="text-[8px] font-black uppercase tracking-wider text-slate-500">Est. Value</span>
             <h3 className="mt-1 text-lg font-black text-emerald-400 tracking-tight">
               {cropName.toLowerCase().includes('basil') ? 'RM 864.00' : cropName.toLowerCase().includes('tomato') ? 'RM 512.00' : 'RM 904.00'}
             </h3>
@@ -410,61 +458,54 @@ function AIPanel() {
             </span>
           </div>
 
-          {/* Right Column: Revenue target & target market channels */}
-          <div className="flex-1 min-w-0 w-full">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
-              <span className="text-xs font-bold text-slate-300">Channel: {cropName.toLowerCase().includes('basil') ? 'Premium Dining' : cropName.toLowerCase().includes('tomato') ? 'Eco Wholesalers' : 'Local UTM Markets'}</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">💰 Sales/Demand Analysis</span>
+          <p className="text-[11px] font-semibold leading-relaxed text-slate-300 text-center min-h-[32px]">
+            Fulfillment forecast aligns with active commercial purchase order requirements.
+          </p>
+
+          <div className="flex flex-col gap-3 w-full border-t border-white/5 pt-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[9px] font-bold uppercase text-slate-500">
+                <span>Market Score</span>
+                <span className="text-white">{cropName.toLowerCase().includes('basil') ? '96%' : cropName.toLowerCase().includes('tomato') ? '78%' : '92%'}</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                <motion.div 
+                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400"
+                  initial={{ width: 0 }}
+                  animate={{ width: cropName.toLowerCase().includes('basil') ? '96%' : cropName.toLowerCase().includes('tomato') ? '78%' : '92%' }}
+                  transition={{ duration: 1.2, ease: 'easeOut' }}
+                />
+              </div>
             </div>
 
-            <p className="mt-2.5 text-xs font-semibold leading-relaxed text-slate-300">
-              High market pull has driven premium prices. Expected harvest yield of <span className="text-white font-bold">{cropName.toLowerCase().includes('basil') ? '28.8 kg' : cropName.toLowerCase().includes('tomato') ? '64.0 kg' : '45.2 kg'}</span> matches direct delivery contracts for local cafeterias and supermarket hubs.
-            </p>
-
-            {/* Demand progress & stats */}
-            <div className="mt-4 flex flex-col md:flex-row items-center gap-6">
-              <div className="flex-1 w-full space-y-1.5">
-                <div className="flex items-center justify-between text-[9px] font-bold uppercase text-slate-500">
-                  <span>Market Pull</span>
-                  <span className="text-white">{cropName.toLowerCase().includes('basil') ? '96%' : cropName.toLowerCase().includes('tomato') ? '78%' : '92%'} Score</span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-                  <motion.div 
-                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-yellow-400"
-                    initial={{ width: 0 }}
-                    animate={{ width: cropName.toLowerCase().includes('basil') ? '96%' : cropName.toLowerCase().includes('tomato') ? '78%' : '92%' }}
-                    transition={{ duration: 1.2, ease: 'easeOut' }}
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Est. Yield</span>
+                <span className="text-xs font-black text-white">
+                  {cropName.toLowerCase().includes('basil') ? '28.8 kg' : cropName.toLowerCase().includes('tomato') ? '64.0 kg' : '45.2 kg'}
+                </span>
               </div>
-
-              <div className="grid grid-cols-2 gap-4 shrink-0 w-full md:w-auto">
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Est. Yield</span>
-                  <span className="text-xs font-black text-white">
-                    {cropName.toLowerCase().includes('basil') ? '28.8 kg' : cropName.toLowerCase().includes('tomato') ? '64.0 kg' : '45.2 kg'}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Contract Type</span>
-                  <span className="text-xs font-black text-amber-400">Direct Sell</span>
-                </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Contract</span>
+                <span className="text-xs font-black text-amber-400">Direct Sell</span>
               </div>
             </div>
           </div>
+
         </div>
+
       </div>
 
-      {/* 3. Hardware Attention Points (Anomaly Logs) */}
-      <div className="flex flex-col gap-4">
+      {/* 3. Diagnostic Checklist section below */}
+      <div className="flex flex-col gap-4 mt-6 border-t border-white/5 pt-6">
         <div className="flex items-center justify-between px-2">
           <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-rose-400 flex items-center gap-1.5">
-            <Eye size={12} className="text-rose-400 animate-pulse" /> ⚠️ Attention Points
+            <Eye size={12} className="text-rose-400 animate-pulse" /> Diagnostic Checklist
           </h4>
-          <span className="text-[9px] font-bold uppercase text-slate-600">Vision Diagnostic</span>
+          <span className="text-[9px] font-bold uppercase text-slate-600">Active Monitor</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {attentionItems.map((item) => (
             <div
               key={item.id}

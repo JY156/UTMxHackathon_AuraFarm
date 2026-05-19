@@ -114,7 +114,7 @@ export default function ComponentDetails() {
               )}
 
               {/* Local Rack Alerts */}
-              {alerts.some(a => !a.resolved && a.type === 'biological_threat' && (a.target === 'rack' || a.rackId === rackNumber)) ? (
+              {alerts.some(a => !a.resolved && a.type === 'biological_threat' && (a.target === 'rack' && a.rackId === rackNumber)) ? (
                 <div className="flex flex-col gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-400 animate-pulse">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="h-5 w-5 text-red-400" />

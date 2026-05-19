@@ -235,7 +235,7 @@ function PlantedRack({
 function FarmScene({ actuators, alerts }: FarmSceneProps) {
   const inspectedId = useFarmStore((s) => s.inspectedId)
   const cvData = useFarmStore((s) => s.cvData)
-  const isNitrogenDeficient = cvData?.nutrient_deficiencies?.nitrogen?.detected ?? true
+  const isNitrogenDeficient = cvData?.nutrient_deficiencies?.nitrogen?.detected ?? false
   const isPhosphorusDeficient = cvData?.nutrient_deficiencies?.phosphorus?.detected ?? false
   const isPotassiumDeficient = cvData?.nutrient_deficiencies?.potassium?.detected ?? false
   if (!actuators) return null

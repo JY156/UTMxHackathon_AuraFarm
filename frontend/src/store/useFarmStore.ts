@@ -182,7 +182,52 @@ const demoActuators: FarmActuators = {
   valveAlkaline: false,
 }
 
-export const useFarmStore = create<FarmState>((set) => ({
+export const useFarmStore = create<FarmState>((setActual, get) => {
+  const set = (nextStateOrUpdater: any, replace?: boolean) => {
+    setActual((state) => {
+      const nextState = typeof nextStateOrUpdater === 'function'
+        ? nextStateOrUpdater(state)
+        : nextStateOrUpdater
+
+      // Intercept toast additions to automatically sync to the activity log!
+      if (nextState.toasts && state.toasts && nextState.toasts.length > state.toasts.length) {
+        const existingIds = new Set(state.toasts.map((t: any) => t.id))
+        const newToasts = nextState.toasts.filter((t: any) => !existingIds.has(t.id))
+
+        if (newToasts.length > 0) {
+          const newEntries = newToasts.map((t: any) => {
+            let emoji = '⚡'
+            const msg = t.message.toLowerCase()
+            if (msg.includes('ph') || msg.includes('alkaline') || msg.includes('acidic')) {
+              emoji = '💧'
+            } else if (
+              msg.includes('nitrogen') ||
+              msg.includes('phosphorus') ||
+              msg.includes('potassium') ||
+              msg.includes('n ') ||
+              msg.includes('p ') ||
+              msg.includes('k ')
+            ) {
+              emoji = '🌿'
+            } else if (msg.includes('led') || msg.includes('light')) {
+              emoji = '💡'
+            }
+            return `${emoji} ${t.message}`
+          })
+
+          const currentLog = nextState.automationLog !== undefined
+            ? nextState.automationLog
+            : state.automationLog
+
+          nextState.automationLog = [...currentLog, ...newEntries].slice(-10)
+        }
+      }
+
+      return nextState
+    }, replace)
+  }
+
+  return {
   // Seed with a live-demo baseline so the dashboard renders before the backend connects.
   sensors: demoSensors,
   actuators: demoActuators,
@@ -212,8 +257,8 @@ export const useFarmStore = create<FarmState>((set) => ({
   syncFromBackend: (payload) =>
     set((state) => {
       console.log('📥 Received payload:', {
-        hasAlerts: payload.alerts?.length > 0,
-        alertTypes: payload.alerts?.map(a => a.type),
+        hasAlerts: !!(payload.alerts && payload.alerts.length > 0),
+        alertTypes: payload.alerts?.map((a: any) => a.type),
         cvData: payload.cv_data?.overall_health
       })
       // Defensive parsing: keep previous value if payload field is missing
@@ -309,6 +354,7 @@ export const useFarmStore = create<FarmState>((set) => ({
       }
 
       // Handle server-issued actions
+      let nextToasts = state.toasts
       if (payload.actions && Array.isArray(payload.actions)) {
         payload.actions.forEach(action => {
           if (typeof action === 'string' && action.startsWith('RESOLVE_ALERT:')) {
@@ -317,6 +363,23 @@ export const useFarmStore = create<FarmState>((set) => ({
               alert.id === idToResolve ? { ...alert, resolved: true, resolvedAt: Date.now() } : alert
             )
           }
+        })
+      }
+
+      if (newActions.length > 0) {
+        newActions.forEach(action => {
+          let displayMsg = action
+          let type: 'info' | 'success' | 'error' = 'info'
+          if (action.startsWith('RESOLVE_ALERT:')) {
+            const alertName = action.split(':')[1].replace(/_all_all|_all/g, '').replace(/_/g, ' ').toUpperCase()
+            displayMsg = `✅ Alert resolved: ${alertName}`
+            type = 'success'
+          } else if (action.toLowerCase().includes('alert:') || action.toLowerCase().includes('low ')) {
+            type = 'error'
+          } else if (action.toLowerCase().includes('stabilized') || action.toLowerCase().includes('normal') || action.toLowerCase().includes('restored') || action.toLowerCase().includes('resolved')) {
+            type = 'success'
+          }
+          nextToasts = [...nextToasts, { id: createId(), message: displayMsg, type }]
         })
       }
 
@@ -329,7 +392,8 @@ export const useFarmStore = create<FarmState>((set) => ({
         automationLog: newActions.length > 0
           ? [...state.automationLog, ...newActions].slice(-5)
           : state.automationLog,
-        alerts: nextAlerts
+        alerts: nextAlerts,
+        toasts: nextToasts
       }
     }),
 
@@ -348,13 +412,15 @@ export const useFarmStore = create<FarmState>((set) => ({
         body: JSON.stringify({ actuator, state: newVal ? 'on' : 'off', autoMode: false })
       }).catch(console.error)
 
+      const logMsg = `⚡ Manual override requested for: ${actuator.toUpperCase()}`
       return {
         actuators: { ...state.actuators, [actuator]: newVal },
         autoMode: false,
         automationLog: [
           ...state.automationLog,
-          `⚡ Manual override requested for: ${actuator.toUpperCase()}`
-        ].slice(-5)
+          logMsg
+        ].slice(-5),
+        toasts: [...state.toasts, { id: createId(), message: logMsg, type: 'info' }]
       }
     })
   },
@@ -369,13 +435,15 @@ export const useFarmStore = create<FarmState>((set) => ({
         body: JSON.stringify({ led_mode: mode, autoMode: false })
       }).catch(console.error)
 
+      const logMsg = `💡 LED mode override requested: ${mode.toUpperCase()}`
       return {
         actuators: { ...state.actuators, led: mode },
         autoMode: false,
         automationLog: [
           ...state.automationLog,
-          `💡 LED mode override requested: ${mode.toUpperCase()}`
-        ].slice(-5)
+          logMsg
+        ].slice(-5),
+        toasts: [...state.toasts, { id: createId(), message: logMsg, type: 'info' }]
       }
     })
   },
@@ -388,7 +456,15 @@ export const useFarmStore = create<FarmState>((set) => ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ autoMode: newMode })
       }).catch(console.error)
-      return { autoMode: newMode }
+      const logMsg = `🤖 Automation Mode set to: ${newMode ? 'ACTIVE' : 'MANUAL'}`
+      return {
+        autoMode: newMode,
+        automationLog: [
+          ...state.automationLog,
+          logMsg
+        ].slice(-5),
+        toasts: [...state.toasts, { id: createId(), message: logMsg, type: 'info' }]
+      }
     })
   },
 
@@ -456,35 +532,82 @@ export const useFarmStore = create<FarmState>((set) => ({
   setInspectedId: (id) => set({ inspectedId: id }),
 
   triggerLocalPHDrop: () => {
-    set((state) => {
-      if (!state.sensors || !state.actuators) return state
+    const isConnected = get().connectionStatus === 'connected'
+    console.log("=== triggerLocalPHDrop CLICKED ===");
+    console.log("Connection Status:", get().connectionStatus);
+    console.log("Current Sensors:", get().sensors);
+    console.log("Current Actuators:", get().actuators);
 
+    // Let's add a robust toast that always appears instantly!
+    set((state) => ({
+      toasts: [...state.toasts, { id: createId(), message: `DEBUG: pH Drop Clicked (Mode: ${isConnected ? 'Online' : 'Offline'})`, type: 'info' }]
+    }))
+
+    if (isConnected) {
+      // Online mode: Optimistic UI update + backend scenario dispatch
+      set((state) => {
+        const currentSensors = state.sensors || demoSensors
+        return {
+          sensors: { ...currentSensors, ph: 4.8 },
+          toasts: [...state.toasts, { id: createId(), message: 'Alert: pH dropped to 4.8! Alerting automation controller...', type: 'error' }]
+        }
+      })
+      fetch('http://localhost:8000/api/demo/scenario?type=ph_drop', {
+        method: 'POST'
+      }).then(res => {
+        console.log("pH Drop POST result status:", res.status);
+      }).catch(err => {
+        console.error('Failed to trigger pH scenario', err);
+      })
+      return
+    }
+
+    // Offline mode: High-fidelity step-by-step local simulation
+    // Stage 1: pH Drop
+    set((state) => {
+      const currentSensors = state.sensors || demoSensors
       return {
-        sensors: { ...state.sensors, ph: 4.8 },
-        actuators: { ...state.actuators, valveAlkaline: true },
-        automationLog: [
-          ...state.automationLog,
-          `[SYSTEM] pH drop detected. Activating Alkaline dosing valve. Re-evaluating in 5 mins.`
-        ].slice(-5),
-        toasts: [...state.toasts, { id: createId(), message: `Alert: pH dropped to 4.8!`, type: 'error' }, { id: createId(), message: `Dosing pump active: Injecting Alkaline buffer`, type: 'info' }]
+        sensors: { ...currentSensors, ph: 4.8 },
+        toasts: [...state.toasts, { id: createId(), message: 'Alert: pH dropped to 4.8! Alerting automation controller...', type: 'error' }]
       }
     })
 
-    // Auto resolve after 8 seconds
+    // Stage 2: After 3 seconds, turn pump on and show toast
     setTimeout(() => {
-      useFarmStore.setState((state) => {
-        if (!state.sensors || !state.actuators) return state
+      set((state) => {
+        const currentActuators = state.actuators || demoActuators
         return {
-          sensors: { ...state.sensors, ph: 6.2 },
-          actuators: { ...state.actuators, valveAlkaline: false },
-          automationLog: [
-            ...state.automationLog,
-            `[SYSTEM] pH stabilized at 6.2. Alkaline valve closed.`
-          ].slice(-5),
-          toasts: [...state.toasts, { id: createId(), message: `pH stabilized at 6.2!`, type: 'success' }]
+          actuators: { ...currentActuators, valveAlkaline: true },
+          toasts: [...state.toasts, { id: createId(), message: 'Dosing pump active: Injecting Alkaline buffer...', type: 'info' }]
         }
       })
-    }, 8000)
+
+      // Step 3: Smoothly recover pH over 5 seconds (10 steps of 0.5s each)
+      const steps = 10
+      let currentStep = 0
+      const interval = setInterval(() => {
+        currentStep++
+        set((state) => {
+          const currentSensors = state.sensors || demoSensors
+          const phVal = Number((4.8 + (6.2 - 4.8) * (currentStep / steps)).toFixed(2))
+          return {
+            sensors: { ...currentSensors, ph: phVal }
+          }
+        })
+
+        if (currentStep >= steps) {
+          clearInterval(interval)
+          // Stage 4: Stabilize
+          set((state) => {
+            const currentActuators = state.actuators || demoActuators
+            return {
+              actuators: { ...currentActuators, valveAlkaline: false },
+              toasts: [...state.toasts, { id: createId(), message: 'pH stabilized at 6.2! Number is normal.', type: 'success' }]
+            }
+          })
+        }
+      }, 500)
+    }, 3000)
   },
 
   setCvData: (data) => set({ cvData: data }),
@@ -530,84 +653,135 @@ export const useFarmStore = create<FarmState>((set) => ({
   },
 
   triggerNutrientDepletion: (type = 'nitrogen') => {
+    const isConnected = get().connectionStatus === 'connected'
+    console.log(`=== triggerNutrientDepletion CLICKED: ${type} ===`);
+    console.log("Connection Status:", get().connectionStatus);
+    console.log("Current Sensors:", get().sensors);
+    console.log("Current Actuators:", get().actuators);
+
+    const capName = type.charAt(0).toUpperCase() + type.slice(1)
+    const capLetter = type === 'nitrogen' ? 'N' : type === 'phosphorus' ? 'P' : 'K'
+    const startVal = type === 'nitrogen' ? 45.0 : type === 'phosphorus' ? 10.0 : 60.0
+    const targetVal = type === 'nitrogen' ? 120.0 : type === 'phosphorus' ? 40.0 : 180.0
+    const valveKey = type === 'nitrogen' ? 'valveN' : type === 'phosphorus' ? 'valveP' : 'valveK' as const
+
+    const baseCv = get().cvData || {
+      crop_type: "lettuce",
+      overall_health: "healthy",
+      diseases_detected: [],
+      nutrient_deficiencies: {
+        nitrogen: { detected: false, confidence: 0, severity_score: 0 },
+        phosphorus: { detected: false, confidence: 0, severity_score: 0 },
+        potassium: { detected: false, confidence: 0, severity_score: 0 }
+      },
+      visual_symptoms: [],
+      recommendations: []
+    }
+
+    // Let's add a robust toast that always appears instantly!
+    set((state) => ({
+      toasts: [...state.toasts, { id: createId(), message: `DEBUG: Deplete ${capLetter} Clicked (Mode: ${isConnected ? 'Online' : 'Offline'})`, type: 'info' }]
+    }))
+
+    if (isConnected) {
+      // Online mode: Optimistic UI update + backend scenario dispatch
+      set((state) => {
+        const cv = state.cvData || baseCv
+        const currentSensors = state.sensors || demoSensors
+        return {
+          cvData: {
+            ...cv,
+            nutrient_deficiencies: {
+              ...cv.nutrient_deficiencies,
+              [type]: { detected: true, confidence: 0.91, severity_score: 0.85 }
+            }
+          },
+          sensors: {
+            ...currentSensors,
+            [type]: startVal
+          },
+          toasts: [...state.toasts, { id: createId(), message: `Alert: Low ${capName} levels detected!`, type: 'error' }]
+        }
+      })
+      fetch(`http://localhost:8000/api/demo/scenario?type=${type}_depletion`, {
+        method: 'POST'
+      }).then(res => {
+        console.log("Nutrient Depletion POST result status:", res.status);
+      }).catch(err => {
+        console.error('Failed to trigger nutrient depletion scenario', err);
+      })
+      return
+    }
+
+    // Offline mode: High-fidelity step-by-step local simulation
+    // Stage 1: Depletion detected (veges turn yellow)
     set((state) => {
-      const capName = type.charAt(0).toUpperCase() + type.slice(1)
-      const baseCv = state.cvData || {
-        crop_type: "lettuce",
-        overall_health: "healthy",
-        diseases_detected: [],
-        nutrient_deficiencies: {
-          nitrogen: { detected: false, confidence: 0, severity_score: 0 },
-          phosphorus: { detected: false, confidence: 0, severity_score: 0 },
-          potassium: { detected: false, confidence: 0, severity_score: 0 }
-        },
-        visual_symptoms: [],
-        recommendations: []
-      }
+      const cv = state.cvData || baseCv
+      const currentSensors = state.sensors || demoSensors
       return {
         cvData: {
-          ...baseCv,
+          ...cv,
           nutrient_deficiencies: {
-            ...baseCv.nutrient_deficiencies,
+            ...cv.nutrient_deficiencies,
             [type]: { detected: true, confidence: 0.91, severity_score: 0.85 }
           }
         },
-        automationLog: [
-          ...state.automationLog,
-          `[CV ALGORITHM] Systemic low ${capName} levels detected in reservoir solution.`
-        ].slice(-5),
+        sensors: {
+          ...currentSensors,
+          [type]: startVal
+        },
         toasts: [...state.toasts, { id: createId(), message: `Alert: Low ${capName} levels detected!`, type: 'error' }]
       }
     })
 
-    // Automatically trigger the dosing recovery system after 6 seconds!
+    // Stage 2: After 3 seconds, turn pump on and show toast
     setTimeout(() => {
-      const state = useFarmStore.getState()
-      const isDeficient = state.cvData?.nutrient_deficiencies?.[type]?.detected
-      if (isDeficient) {
-        state.triggerNutrientFix(type)
-      }
-    }, 6000)
+      set((state) => {
+        const currentActuators = state.actuators || demoActuators
+        const solutionText = type === 'nitrogen' ? 'N' : capName
+        return {
+          actuators: { ...currentActuators, [valveKey]: true },
+          toasts: [...state.toasts, { id: createId(), message: `Dosing pump ${capLetter} active: Adding ${solutionText} solution...`, type: 'info' }]
+        }
+      })
+
+      // Step 3: Smoothly recover nutrient level over 5 seconds (10 steps of 0.5s each)
+      const steps = 10
+      let currentStep = 0
+      const interval = setInterval(() => {
+        currentStep++
+        set((state) => {
+          const currentSensors = state.sensors || demoSensors
+          const val = Number((startVal + (targetVal - startVal) * (currentStep / steps)).toFixed(1))
+          return {
+            sensors: { ...currentSensors, [type]: val }
+          }
+        })
+
+        if (currentStep >= steps) {
+          clearInterval(interval)
+          // Stage 4: Stabilize (veges back to green)
+          set((state) => {
+            const currentActuators = state.actuators || demoActuators
+            const currentCv = state.cvData || baseCv
+            const updatedDeficiencies = { ...currentCv.nutrient_deficiencies }
+            updatedDeficiencies[type] = { detected: false, confidence: 0.99, severity_score: 0 }
+            return {
+              actuators: { ...currentActuators, [valveKey]: false },
+              cvData: {
+                ...currentCv,
+                nutrient_deficiencies: updatedDeficiencies
+              },
+              toasts: [...state.toasts, { id: createId(), message: `${capName} stabilized: Normal already! Veggies color restored.`, type: 'success' }]
+            }
+          })
+        }
+      }, 500)
+    }, 3000)
   },
 
   triggerNutrientFix: (type = 'nitrogen') => {
-    const valveKey = type === 'nitrogen' ? 'valveN' : type === 'phosphorus' ? 'valveP' : 'valveK'
-    const capName = type.charAt(0).toUpperCase() + type.slice(1)
-    const capLetter = type === 'nitrogen' ? 'N' : type === 'phosphorus' ? 'P' : 'K'
-    const solName = type === 'nitrogen' ? 'Nitrate' : type === 'phosphorus' ? 'Phosphate' : 'Potash'
-    const targetPpm = type === 'nitrogen' ? '820 ppm' : type === 'phosphorus' ? '280 ppm' : '650 ppm'
-
-    set((state) => {
-      if (!state.sensors || !state.actuators || !state.cvData) return state
-      return {
-        actuators: { ...state.actuators, [valveKey]: true },
-        automationLog: [
-          ...state.automationLog,
-          `[SYSTEM] Dosing pump ${capLetter} active. Injecting ${solName} solution to central loop.`
-        ].slice(-5),
-        toasts: [...state.toasts, { id: createId(), message: `Dosing pump ${capLetter} active: Injecting ${solName}`, type: 'info' }]
-      }
-    })
-
-    setTimeout(() => {
-      useFarmStore.setState((state) => {
-        if (!state.sensors || !state.actuators || !state.cvData) return state
-        return {
-          cvData: {
-            ...state.cvData,
-            nutrient_deficiencies: {
-              ...state.cvData.nutrient_deficiencies,
-              [type]: { detected: false, confidence: 0.99, severity_score: 0 }
-            }
-          },
-          actuators: { ...state.actuators, [valveKey]: false },
-          automationLog: [
-            ...state.automationLog,
-            `[SYSTEM] Central reservoir ${capName} levels stabilized at ${targetPpm}.`
-          ].slice(-5),
-          toasts: [...state.toasts, { id: createId(), message: `${capName} levels stabilized: All crops healthy!`, type: 'success' }]
-        }
-      })
-    }, 4000)
+    // Handled completely by the automatic depletion simulation
   }
-}))
+}
+})

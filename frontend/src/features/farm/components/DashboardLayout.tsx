@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef } from 'react'
-import { Radio, BarChart3, Bot, ChevronLeft, Settings, Cpu, Activity, Zap, Mic, Leaf } from 'lucide-react'
+import { Radio, BarChart3, Bot, ChevronLeft, Settings, Cpu, Activity, Zap, Mic, X } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFarmStore, type AllocationLedger } from '../../../store/useFarmStore'
@@ -33,6 +33,7 @@ const FarmViewport = memo(function FarmViewport() {
 
   const criticalAlerts = alerts.filter((alert) => alert.severity === 'critical' && !alert.resolved)
 
+  if (!sensors || !actuators) return null
   return <FarmScene sensors={sensors} actuators={actuators} alerts={criticalAlerts} profile={profile} />
 })
 
@@ -193,9 +194,9 @@ function SystemStatus() {
 
 function DashboardLayout() {
   useWebSocket()
-  const { isListening, transcript, startListening, stopListening } = useVoiceCommand()
+  const { isListening, startListening, stopListening } = useVoiceCommand()
   const [activeTab, setActiveTab] = useState<'monitor' | 'analytics' | 'ai' | 'harvest'>('monitor')
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const container = useRef<HTMLDivElement>(null)
 
   const { inspectedId, setInspectedId, alerts, sensors, actuators } = useFarmStore(
@@ -305,7 +306,10 @@ function DashboardLayout() {
                     )}
                   </button>
 
-                  <button className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-slate-400 backdrop-blur-xl transition-all hover:bg-white/5 hover:text-white">
+                  <button 
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-slate-400 backdrop-blur-xl transition-all hover:bg-white/5 hover:text-white"
+                  >
                     <Settings size={22} />
                   </button>
                 </div>
@@ -406,10 +410,7 @@ function DashboardLayout() {
                       </div>
                     )}
                     {activeTab === 'ai' && (
-                      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-                        <AIPanel />
-                        <JSONImporter />
-                      </div>
+                      <AIPanel />
                     )}
                   </motion.div>
                 )}
@@ -417,6 +418,34 @@ function DashboardLayout() {
             </div>
           </div>
           <ToastSystem />
+          <AnimatePresence>
+            {isSettingsOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md pointer-events-auto"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  transition={{ type: 'spring', duration: 0.5 }}
+                  className="relative w-full max-w-6xl rounded-[40px] border border-white/10 bg-black/60 p-8 shadow-[0_32px_100px_rgba(0,0,0,0.65)] backdrop-blur-3xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => setIsSettingsOpen(false)}
+                    className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                  <JSONImporter />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <div className="hud-demo">
             <DemoController />
           </div>
