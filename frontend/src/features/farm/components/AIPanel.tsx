@@ -352,11 +352,14 @@ function AIPanel() {
             <span className="text-xs font-bold text-slate-400">{cycleText}</span>
           </div>
 
-          <div className="w-full h-32 rounded-3xl border border-white/5 bg-black/30 relative overflow-hidden flex items-center justify-center">
-            <Canvas camera={{ position: [0, 1.2, 2.2], fov: 42 }} className="absolute inset-0">
-              <ambientLight intensity={0.9} />
-              <directionalLight position={[3, 4, 3]} intensity={1.8} />
-              <pointLight position={[-3, -2, -3]} intensity={0.6} />
+          <div className="w-full h-40 rounded-3xl border border-white/5 bg-black/30 relative overflow-hidden flex items-center justify-center">
+            <Canvas camera={{ position: [0, 0.6, 1.35], fov: 40 }} className="absolute inset-0">
+              <ambientLight intensity={1.4} />
+              <directionalLight position={[4, 5, 4]} intensity={2.8} />
+              {/* Violet/Magenta Grow Light simulation */}
+              <pointLight position={[-3, 3, -2]} intensity={4.5} color="#d946ef" />
+              {/* Cool Cyan Accent Glow */}
+              <pointLight position={[3, 2, 3]} intensity={3.0} color="#06b6d4" />
               <Lettuce 
                 growthStage={
                   maturityPercent < 35 
@@ -365,13 +368,13 @@ function AIPanel() {
                       ? 'vegetative' 
                       : 'harvest'
                 }
-                scale={1.2}
-                position={[0, -0.4, 0]}
+                scale={2.4}
+                position={[0, -0.15, 0]}
               />
               <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={3.5} />
             </Canvas>
             
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col items-center justify-end pb-2.5 pointer-events-none">
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent flex flex-col items-center justify-end pb-2.5 pointer-events-none">
               <h3 className="text-base font-black text-white tracking-tight drop-shadow-md">{daysToHarvest} Days</h3>
               <span className="text-[7px] font-black uppercase tracking-widest text-cyan-400 drop-shadow-md">to harvest</span>
             </div>
