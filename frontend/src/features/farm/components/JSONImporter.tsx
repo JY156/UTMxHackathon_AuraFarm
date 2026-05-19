@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { FileUp, Leaf, Info, Sparkles, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Leaf, Info, Sparkles, UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFarmStore, type FarmProfile } from '../../../store/useFarmStore'
 
