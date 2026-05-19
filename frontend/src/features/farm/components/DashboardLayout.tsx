@@ -2,7 +2,7 @@ import { memo, useState, useEffect, useRef } from 'react'
 import { Radio, BarChart3, Bot, ChevronLeft, Settings, Cpu, Activity, Zap, Mic, Leaf } from 'lucide-react'
 import { useShallow } from 'zustand/react/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useFarmStore } from '../../../store/useFarmStore'
+import { useFarmStore, type AllocationLedger } from '../../../store/useFarmStore'
 import { useWebSocket } from '../../../hooks/useWebSocket'
 import { useVoiceCommand } from '../../../hooks/useVoiceCommand'
 import FarmScene from '../FarmScene'
@@ -35,6 +35,117 @@ const FarmViewport = memo(function FarmViewport() {
 
   return <FarmScene sensors={sensors} actuators={actuators} alerts={criticalAlerts} profile={profile} />
 })
+
+function PreHarvestLedgerOverlay() {
+  const { allocationLedger, profile, setAllocationLedger, addToast } = useFarmStore(
+    useShallow((state) => ({
+      allocationLedger: state.allocationLedger,
+      profile: state.profile,
+      setAllocationLedger: state.setAllocationLedger,
+      addToast: state.addToast,
+    })),
+  )
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadLedger = async () => {
+      try {
+        const cropType = (profile?.name || 'Lettuce').toLowerCase()
+        const response = await fetch('/api/blockchain/prebook-allocation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ crop_type: cropType, total_capacity_kg: 500 }),
+        })
+
+        if (!response.ok) return
+
+        const data = (await response.json()) as AllocationLedger
+        if (cancelled) return
+
+        setAllocationLedger(data)
+        useFarmStore.setState((state) => ({
+          automationLog: [...state.automationLog, data.log_message].slice(-5),
+        }))
+        addToast('Supply ledger opened', 'success')
+      } catch {
+        // Keep the compact monitor card visible even if the fetch fails.
+      }
+    }
+
+    void loadLedger()
+
+    return () => {
+      cancelled = true
+    }
+  }, [profile?.name, setAllocationLedger, addToast])
+
+  const ledger = allocationLedger ?? {
+    token_symbol: 'AuraLettuce',
+    total_minted_tokens: 500,
+    allocation_percentage: 60,
+    allocations: [
+      { type: 'KPKM PROGRAM', entity: 'FAMA', tokens: 200, use_case: 'subsidy floor price', status: 'Escrow Secured' },
+      { type: 'RETAIL BUYER', entity: 'Jaya Grocer', tokens: 100, use_case: 'market-rate forward', status: 'Escrow Secured' },
+    ],
+    log_message: '',
+  }
+
+  return (
+    <div className="absolute bottom-8 left-8 z-20 pointer-events-auto">
+      <div className="group w-[360px] overflow-hidden rounded-[28px] border border-emerald-500/15 bg-black/65 p-3 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,0.55)] transition-all duration-300 hover:w-[460px]">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div>
+            <p className="text-sm font-extrabold tracking-tight text-white">Order Booking & Funding</p>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{`${ledger.allocation_percentage}% allocated`}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-slate-400">(500kg = 500token)</p>
+          </div>
+        </div>
+
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+          <motion.div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400"
+            initial={{ width: 0 }}
+            animate={{ width: `${ledger.allocation_percentage}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        </div>
+
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-96 group-hover:opacity-100">
+          <div className="flex items-start justify-between gap-3 px-1 pt-4 pb-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-400">Pre-Harvest Allocation Ledger</p>
+              <p className="mt-1 text-xs font-semibold text-slate-300">B2B / B2G supply contracts</p>
+            </div>
+            <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300">
+              Target secured
+            </span>
+          </div>
+
+          <div className="rounded-[22px] border border-white/5 bg-white/5 p-4">
+            <div className="mt-4 grid gap-3 text-[11px] text-slate-300">
+              {ledger.allocations.map((allocation) => (
+                <div key={allocation.entity} className="rounded-2xl border border-white/5 bg-black/20 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-bold text-white">{allocation.entity}</p>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-300">{allocation.type}</span>
+                  </div>
+                  <p className="mt-1 text-slate-400">
+                    {allocation.tokens} tokens · {allocation.use_case}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:mt-4 group-hover:max-h-8 group-hover:opacity-100" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function SystemStatus() {
   const [time, setTime] = useState(new Date())
@@ -137,6 +248,7 @@ function DashboardLayout() {
             <FarmViewport />
             {/* Subtle vignette for depth */}
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.6)_100%)]" />
+            <PreHarvestLedgerOverlay />
           </div>
 
           {/* 🛸 UI LAYER: Floating HUD */}

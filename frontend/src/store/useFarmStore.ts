@@ -89,6 +89,22 @@ export interface Toast {
   type: 'success' | 'info' | 'error'
 }
 
+export interface AllocationLedgerAllocation {
+  type: string
+  entity: string
+  tokens: number
+  use_case: string
+  status: string
+}
+
+export interface AllocationLedger {
+  token_symbol: string
+  total_minted_tokens: number
+  allocation_percentage: number
+  allocations: AllocationLedgerAllocation[]
+  log_message: string
+}
+
 export interface CVData {
   crop_type: string
   overall_health: string
@@ -121,6 +137,7 @@ export interface FarmState {
   connectionStatus: 'connected' | 'disconnected' | 'reconnecting'
   connectionAttempts: number
   cvData: CVData | null
+  allocationLedger: AllocationLedger | null
 
   // Actions
   syncFromBackend: (payload: WebSocketPayload) => void
@@ -136,6 +153,9 @@ export interface FarmState {
   setInspectedId: (id: string | null) => void
   triggerLocalPHDrop: () => void
   setCvData: (data: CVData | null) => void
+  setAllocationLedger: (ledger: AllocationLedger | null) => void
+  setHardwareProfile: (profile: FarmProfile) => void
+  switchCrop: (crop: string, verifiedParams?: Record<string, any>) => Promise<void>
   triggerNutrientFix: (type?: 'nitrogen' | 'phosphorus' | 'potassium') => void
   triggerNutrientDepletion: (type?: 'nitrogen' | 'phosphorus' | 'potassium') => void
 }
@@ -187,6 +207,7 @@ export const useFarmStore = create<FarmState>((set) => ({
   connectionStatus: 'disconnected',
   connectionAttempts: 0,
   cvData: null,
+  allocationLedger: null,
 
   syncFromBackend: (payload) =>
     set((state) => {
@@ -467,6 +488,46 @@ export const useFarmStore = create<FarmState>((set) => ({
   },
 
   setCvData: (data) => set({ cvData: data }),
+
+  setAllocationLedger: (ledger) => set({ allocationLedger: ledger }),
+
+  // Apply a hardware profile (LED schedule, dosing targets) to the local store
+  setHardwareProfile: (profile) => {
+    set((state) => ({ profile, automationLog: [...state.automationLog, `[SYSTEM] Hardware profile applied: ${profile.name}`].slice(-5), toasts: [...state.toasts, { id: createId(), message: `Hardware profile applied: ${profile.name}`, type: 'success' }] }))
+  },
+
+  // High-level crop switch orchestration: calls backend, applies profile, updates ledger + logs
+  switchCrop: async (crop, verifiedParams) => {
+    try {
+      const response = await fetch('http://localhost:8000/api/crop/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ crop, params: verifiedParams || {} }),
+      })
+
+      if (!response.ok) throw new Error('Crop switch failed')
+
+      const data = await response.json()
+
+      // Apply profile locally
+      if (data.profile) {
+        set((state) => ({
+          profile: data.profile,
+          actuators: state.actuators ? { ...state.actuators, led: data.profile.preferred_led_mode || state.actuators!.led } : state.actuators,
+          automationLog: [...state.automationLog, data.log_message || `Switched crop to ${crop}`].slice(-5),
+          toasts: [...state.toasts, { id: createId(), message: `Switched next cycle to ${data.profile.name}`, type: 'success' }]
+        }))
+      }
+
+      // Update allocation ledger if present
+      if (data.allocation_ledger) {
+        set({ allocationLedger: data.allocation_ledger })
+      }
+    } catch (err) {
+      console.error('switchCrop error', err)
+      set((state) => ({ toasts: [...state.toasts, { id: createId(), message: 'Crop switch failed', type: 'error' }] }))
+    }
+  },
 
   triggerNutrientDepletion: (type = 'nitrogen') => {
     set((state) => {
