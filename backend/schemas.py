@@ -117,3 +117,46 @@ class VisionAnalysisResponse(BaseModel):
     visual_symptoms: Optional[List[str]] = None
     recommendations: Optional[List[str]] = None
     image_url: Optional[str] = None
+
+# --- ✅ Web3 & Crop PRESENTS / Switch API Models ---
+class AllocationLedgerAllocation(BaseModel):
+    type: str
+    entity: str
+    tokens: int
+    use_case: str
+    status: str
+
+class AllocationLedger(BaseModel):
+    token_symbol: str
+    total_minted_tokens: int
+    allocation_percentage: int
+    allocations: List[AllocationLedgerAllocation]
+    log_message: str
+
+class CropSwitchPayload(BaseModel):
+    crop: str
+    params: Optional[dict] = None
+
+class CropSwitchResponse(BaseModel):
+    profile: dict
+    log_message: str
+    allocation_ledger: Optional[AllocationLedger] = None
+
+class ProcurementPayload(BaseModel):
+    item_id: str
+    supplier_id: str
+    cost_myr: float
+
+class ProcurementResponse(BaseModel):
+    status: str
+    tx_hash: str
+    contract_address: str
+    log_message: str
+    supplier_notified: bool
+    explorer_url: Optional[str] = None
+
+class LendingResponse(BaseModel):
+    status: str
+    credit_limit_myr: float
+    usdc_equivalent: float
+    log_message: str

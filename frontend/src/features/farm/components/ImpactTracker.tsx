@@ -89,16 +89,6 @@ function ImpactTracker() {
     <section className="flex flex-col gap-4">
       <header className="flex items-center justify-between px-2">
         <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-slate-400">Resource Efficiency</h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={startLendingFlow}
-            className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-[12px] font-bold text-emerald-300 hover:bg-emerald-500/15 transition"
-            title="Check micro-loan eligibility"
-          >
-            <span>⚡</span>
-            <span>Check Micro-Loan Eligibility</span>
-          </button>
-        </div>
       </header>
 
       {impact ? (
@@ -175,44 +165,135 @@ function ImpactTracker() {
           </div>
         )}
 
-        {!lendingLoading && lendingResult && lendingResult.status === 'approved' && (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-emerald-500/10 px-3 py-1 text-emerald-300 font-bold">💰 DATA-BACKED CREDIT APPROVAL</div>
-                <div className="text-xs text-slate-400">REVENUES VERIFIED</div>
+        {!lendingLoading && lendingResult && (
+          <div className="flex flex-col gap-4">
+            {lendingResult.status === 'approved' ? (
+              // Approved design (Green Theme)
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-500/10 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300 uppercase tracking-wider">
+                      💰 DATA-BACKED CREDIT APPROVED
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.1em]">• REVENUES VERIFIED</span>
+                  </div>
+                  <div className="text-sm font-bold text-slate-300">
+                    Limit: <span className="text-emerald-400">RM {lendingResult.credit_limit_myr.toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                  {lendingResult.log_message}
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2 mt-1">
+                  <div className="rounded-2xl border border-emerald-500/10 bg-emerald-500/5 px-4 py-3 text-xs text-slate-300">
+                    <p className="font-bold uppercase tracking-[0.2em] text-emerald-300">Funding Pool & Terms</p>
+                    <p className="mt-1.5 font-semibold text-white">MDEC-CIMB Agtech Digital Scheme</p>
+                    <p className="mt-1">Rate: <span className="text-emerald-400 font-bold">3.5% Fixed p.a.</span> (Subsidized)</p>
+                    <p className="mt-0.5">Repayment: Automatic from crop revenues</p>
+                  </div>
+                  
+                  <div className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-xs text-slate-300 flex flex-col justify-between">
+                    <div>
+                      <p className="font-bold uppercase tracking-[0.2em] text-slate-400">Web3 Liquidity Details</p>
+                      <p className="mt-1.5 font-mono text-[11px]">USDC Equivalent: {lendingResult.usdc_equivalent.toLocaleString()} USDC</p>
+                      <p className="mt-0.5 text-slate-500 text-[10px]">Settled via Arbitrum Sepolia ESCROW</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+                  <button
+                    onClick={() => setLendingResult(null)}
+                    className="text-xs font-bold text-slate-400 hover:text-slate-200 transition"
+                  >
+                    🔄 Re-evaluate Credit Line
+                  </button>
+                  <button
+                    onClick={() => acceptLoan(lendingResult.credit_limit_myr, lendingResult.log_message)}
+                    className="rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition px-5 py-2 text-xs font-bold text-black flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                  >
+                    🚀 Accept & Claim Funds Instantly
+                  </button>
+                </div>
               </div>
-              <div className="text-sm font-bold text-slate-300">Approved Amount: RM {lendingResult.credit_limit_myr.toFixed(2)}</div>
-            </div>
+            ) : (
+              // Conditional Approval design (Amber Theme)
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/10 pb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="rounded-lg bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300 uppercase tracking-wider">
+                      ⚠️ CONDITIONAL CREDIT APPROVAL
+                    </div>
+                    <span className="text-[10px] text-amber-400 font-bold uppercase tracking-[0.1em]">• ACTIVE RISKS DETECTED</span>
+                  </div>
+                  <div className="text-sm font-bold text-slate-300">
+                    Reduced Limit: <span className="text-amber-400">RM {lendingResult.credit_limit_myr.toLocaleString()}</span>
+                  </div>
+                </div>
 
-            <div className="text-sm text-slate-300">Operational loan unlocked based on your 92% IoT stability score.</div>
+                <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                  {lendingResult.log_message}
+                </p>
 
-            <div className="rounded-2xl border border-emerald-500/10 bg-emerald-500/5 px-4 py-3 text-xs text-emerald-100/90">
-              <p className="font-bold uppercase tracking-[0.2em] text-emerald-300">Funding Pool</p>
-              <p className="mt-1">MDEC-CIMB Agtech Digital Scheme</p>
-              <p className="mt-1 text-slate-300">Subsidized Rate: 3.5% p.a.</p>
-            </div>
+                <div className="rounded-2xl border border-amber-500/10 bg-amber-500/5 px-4 py-3 text-xs text-slate-300">
+                  <p className="font-bold uppercase tracking-[0.2em] text-amber-300">Lending Anomaly Advisory</p>
+                  <p className="mt-1.5 leading-relaxed text-slate-400">
+                    Our Agri-Underwriting engine detected active anomalies (active alerts, environmental telemetry drifts, or health fluctuations) in your system. To unlock higher-tier funding and lower interest rates (up to RM 150,000.00), please resolve all active alerts and stabilize your sensors (temperature, pH, leaf disease, etc.).
+                  </p>
+                </div>
 
-            <ul className="mt-2 list-inside list-disc text-sm text-slate-300">
-              <li>Approved Amount: RM {lendingResult.credit_limit_myr.toFixed(2)} (approx. {lendingResult.usdc_equivalent} USDC)</li>
-              <li>Interest Rate: 3.5% p.a. (subsidized by the MDEC-CIMB Islamic program)</li>
-              <li>Automatic Repayment: Deducted from your next harvest</li>
-            </ul>
+                <div className="grid gap-3 sm:grid-cols-2 mt-1">
+                  <div className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-xs text-slate-300">
+                    <p className="font-bold uppercase tracking-[0.2em] text-slate-400">Available Emergency Pool</p>
+                    <p className="mt-1.5 font-semibold text-white">Agrobank Emergency Crop Micro-Lend</p>
+                    <p className="mt-1 text-amber-400">Rate: 5.5% p.a. (Standard Risk Adjusted)</p>
+                  </div>
+                  
+                  <div className="rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-xs text-slate-300 flex flex-col justify-between">
+                    <div>
+                      <p className="font-bold uppercase tracking-[0.2em] text-slate-400">Web3 Liquidity Details</p>
+                      <p className="mt-1.5 font-mono text-[11px]">USDC Equivalent: {lendingResult.usdc_equivalent.toLocaleString()} USDC</p>
+                      <p className="mt-0.5 text-slate-500 text-[10px]">Settled via Arbitrum Sepolia ESCROW</p>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="mt-3 flex items-center justify-end">
-              <button
-                onClick={() => acceptLoan(lendingResult.credit_limit_myr, lendingResult.log_message)}
-                className="rounded-full bg-emerald-500 px-4 py-2 font-bold text-black"
-              >
-                🚀 Accept & Claim Funds Instantly
-              </button>
-            </div>
+                <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+                  <button
+                    onClick={() => setLendingResult(null)}
+                    className="text-xs font-bold text-slate-400 hover:text-slate-200 transition"
+                  >
+                    🔄 Re-evaluate Credit Line
+                  </button>
+                  <button
+                    onClick={() => acceptLoan(lendingResult.credit_limit_myr, lendingResult.log_message)}
+                    className="rounded-full bg-amber-500 hover:bg-amber-400 active:scale-95 transition px-5 py-2 text-xs font-bold text-black flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
+                  >
+                    🚀 Claim Emergency Liquidity
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {!lendingLoading && !lendingResult && (
-          <div className="space-y-3 text-sm text-slate-500">
-            <p>Check your micro-loan eligibility to see data-backed offers.</p>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-white/5 bg-white/5 p-4">
+              <div className="text-xs text-slate-400 leading-relaxed max-w-xl">
+                <span className="font-bold text-slate-200 block text-sm mb-1">🏦 Telemetry-Backed DeFi Micro-Lending</span>
+                Audit your dynamic environmental telemetry, leaf disease metrics, and uptime logs to unlock real-time operating capital. Fully backed by Agrobank Malaysia and CIMB Islamic Smart Schemes.
+              </div>
+              <button
+                onClick={startLendingFlow}
+                className="whitespace-nowrap rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-95 transition-all duration-300 px-6 py-3 font-bold text-black flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10 text-xs tracking-wider uppercase"
+              >
+                <Sparkles size={14} className="animate-pulse" /> Evaluate Credit Line
+              </button>
+            </div>
+
             <div className="rounded-2xl border border-white/5 bg-white/5 p-3">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Available Digital Funding Offers:</p>
               <div className="mt-3 flex flex-col gap-3">

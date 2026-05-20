@@ -23,7 +23,12 @@ from google import genai
 from google.genai import types
 
 # --- Local imports ---
-from schemas import WebSocketPayload, Alert, Severity
+from schemas import (
+    WebSocketPayload, Alert, Severity,
+    CropSwitchPayload, CropSwitchResponse,
+    ProcurementPayload, ProcurementResponse,
+    LendingResponse, AllocationLedger, AllocationLedgerAllocation
+)
 import mock_engine
 from mock_engine import SHARED_OVERRIDE, ACTIVE_ALERTS, ALERT_COOLDOWNS, STATE_CHANGED_EVENT
 from data_source import DataSource
@@ -365,14 +370,298 @@ async def update_control(payload: ControlPayload):
     STATE_CHANGED_EVENT.clear()
     return {"status": "success", "override": SHARED_OVERRIDE}
 
+# --- Dynamic Web3 Ledger Allocation Helpers ---
+def generate_allocation_ledger(crop: str) -> AllocationLedger:
+    crop_upper = crop.upper()[:3]
+    symbol = f"AURA-{crop_upper}"
+    
+    if crop == "lettuce":
+        allocations = [
+            AllocationLedgerAllocation(
+                type="wholesale_distributor",
+                entity="FAMA (Federal Agricultural Marketing Authority)",
+                tokens=25000,
+                use_case="Pre-harvest wholesale distribution",
+                status="escrowed"
+            ),
+            AllocationLedgerAllocation(
+                type="retail_partner",
+                entity="Jaya Grocer (Klang Valley)",
+                tokens=15000,
+                use_case="Premium organic sales channel",
+                status="locked"
+            ),
+            AllocationLedgerAllocation(
+                type="institutional_lender",
+                entity="Agrobank Malaysia",
+                tokens=10000,
+                use_case="Forward-purchase yield collateral",
+                status="active"
+            )
+        ]
+    elif crop == "basil":
+        allocations = [
+            AllocationLedgerAllocation(
+                type="restaurant_consortium",
+                entity="Malaysian F&B Association",
+                tokens=30000,
+                use_case="Direct farm-to-table culinary logistics",
+                status="escrowed"
+            ),
+            AllocationLedgerAllocation(
+                type="retail_partner",
+                entity="Village Grocer",
+                tokens=12000,
+                use_case="Gourmet herb shelf allocations",
+                status="locked"
+            ),
+            AllocationLedgerAllocation(
+                type="export_escrow",
+                entity="Singapore Agri-Food Logistics",
+                tokens=8000,
+                use_case="Cross-border premium supply lock",
+                status="active"
+            )
+        ]
+    else:  # tomato
+        allocations = [
+            AllocationLedgerAllocation(
+                type="wholesale_distributor",
+                entity="FAMA (Federal Agricultural Marketing Authority)",
+                tokens=20000,
+                use_case="National food security supply distribution",
+                status="escrowed"
+            ),
+            AllocationLedgerAllocation(
+                type="retail_partner",
+                entity="AEON Supermarkets Malaysia",
+                tokens=20000,
+                use_case="Direct farm-fresh premium series placement",
+                status="locked"
+            ),
+            AllocationLedgerAllocation(
+                type="institutional_lender",
+                entity="CIMB Islamic Agtech",
+                tokens=10000,
+                use_case="Shariah-compliant Murabahah supply lock",
+                status="active"
+            )
+        ]
+        
+    return AllocationLedger(
+        token_symbol=symbol,
+        total_minted_tokens=50000,
+        allocation_percentage=100,
+        allocations=allocations,
+        log_message=f"Smart contract minted {symbol} token supply for pre-harvest allocation on Arbitrum Sepolia."
+    )
+
 # --- AI Recommendation Endpoint ---
 @app.get("/api/ai/recommend")
 async def get_ai_recommendation():
-    return {
-        "text": "Increase calcium by 10% and keep irrigation in short pulses for steadier uptake. Current EC levels suggest nutrient imbalance—consider adjusting phosphorus ratio.",
-        "confidence": 87,
-        "context": "Based on current sensor readings and crop profile"
-    }
+    """
+    Generates dynamic agronomy recommendation using Gemini 2.5 Flash
+    incorporating active crop profile targets and live telemetry.
+    """
+    import random
+    
+    # Fetch active targets & current simulation values
+    crop_id = mock_engine.ACTIVE_CROP_ID
+    profiles = load_plant_profiles()
+    crop_name = profiles.get(crop_id, {}).get("name", "Butterhead Lettuce")
+    targets = mock_engine.get_active_crop_targets()
+    
+    current_temp = mock_engine.SIM_STATE["temp"]
+    current_ph = mock_engine.SIM_STATE["ph"]
+    current_moisture = mock_engine.SIM_STATE["moisture"]
+    current_humidity = mock_engine.SIM_STATE["humidity"]
+    current_n = mock_engine.SIM_STATE["nitrogen"]
+    current_p = mock_engine.SIM_STATE["phosphorus"]
+    current_k = mock_engine.SIM_STATE["potassium"]
+    
+    active_alerts_list = [alert.message for alert in mock_engine.ACTIVE_ALERTS.values()]
+    alerts_str = ", ".join(active_alerts_list) if active_alerts_list else "None"
+    
+    drama_type = SHARED_OVERRIDE.get("drama")
+    
+    prompt = f"""
+    You are an expert agronomist advising on a state-of-the-art vertical hydroponic farming system (AuraFarm) in Malaysia.
+    
+    Active Crop: {crop_name}
+    
+    Live Sensor Telemetry:
+    - Temperature: {current_temp}°C (Target: {targets['temp_min']}°C - {targets['temp_max']}°C, Optimal: {targets['temp_optimal']}°C)
+    - pH Level: {current_ph} (Target: {targets['ph_min']} - {targets['ph_max']}, Optimal: {targets['ph_optimal']})
+    - Moisture: {current_moisture}% (Target: {targets['moisture_min']}% - {targets['moisture_max']}%, Optimal: {targets['moisture_optimal']}%)
+    - Humidity: {current_humidity}% (Target: {targets['humidity_min']}% - {targets['humidity_max']}%, Optimal: {targets['humidity_optimal']}%)
+    - N-P-K Levels (mg/L): N: {current_n} (Target: {targets['nitrogen_ppm']}), P: {current_p} (Target: {targets['phosphorus_ppm']}), K: {current_k} (Target: {targets['potassium_ppm']})
+    
+    Active System Alerts:
+    {alerts_str}
+    
+    Active Demo Scenario:
+    {drama_type if drama_type else 'Normal operation'}
+    
+    Task:
+    Provide a highly realistic, concise (1-2 sentences) agronomic prescription and recommendations for the grower.
+    Keep the tone highly professional, precise, and practical.
+    If there are any alerts (e.g. nutrient depletion, environmental breach, pH drift), mention them directly and provide clear mitigation instructions matching the Malaysian context (referencing MARDI or local agrotech practices if appropriate).
+    
+    Your response must be clean text without any markdown or formatting.
+    """
+    
+    # Fallback dynamic generator (if Gemini client is not initialized or fails)
+    def generate_fallback_recommendation():
+        if drama_type == "ph_drop" or current_ph < targets["ph_min"]:
+            return f"Alert: pH has drifted below optimal range to {current_ph}. Dosing pump alkaline injection is active to restore equilibrium. Monitor EC closely to prevent nutrient lockout."
+        elif drama_type == "nitrogen_depletion" or current_n < targets["nitrogen_ppm"] - 15:
+            return f"Low Nitrogen ({current_n} mg/L) detected in nutrient loop. Automation controller has initiated dosing valve N; expect stabilization shortly. Ensure water temperature remains below 24°C for optimal uptake."
+        elif drama_type == "phosphorus_depletion" or current_p < targets["phosphorus_ppm"] - 5:
+            return f"Phosphorus deficiency alert: level at {current_p} mg/L. Automated P-dosing has been triggered. Ensure adequate root aeration is maintained to support healthy root expansion."
+        elif drama_type == "potassium_depletion" or current_k < targets["potassium_ppm"] - 20:
+            return f"Potassium depletion detected: current reading is {current_k} mg/L. Dosing valve K is open to stabilize the crop's cell walls. Ideal for ensuring robust stomatal conductance."
+        elif drama_type == "biological" or "Rust" in alerts_str:
+            return f"Critical Alert: Leaf Rust fungal spores detected on Rack 3. Immediate isolative pruning and organic biological treatment required. Lower room humidity slightly to inhibit spore propagation."
+        elif drama_type == "depletion" or current_moisture < targets["moisture_min"]:
+            return f"Emergency: Water reservoir low ({mock_engine.SIM_STATE['tank_level']}%). System dry-run protection has disabled water pumps to preserve hardware. Refill immediately."
+        elif drama_type == "failure" or "failure" in alerts_str:
+            return "Mechanical Failure: Fan 1 has stopped responding. Cooling loop compromised; check exhaust venting immediately to prevent local thermal spikes."
+        elif drama_type == "breach" or "breach" in alerts_str:
+            return f"Severe Environmental Breach: Ambient temperatures at {current_temp}°C exceed safe thresholds. Exhaust vents opened and grow lighting intensity reduced to cool the canopy."
+        else:
+            if crop_id == "lettuce":
+                return f"Crop development is outstanding. Current microclimate ({current_temp}°C, pH {current_ph}) is in sweet spot for Butterhead Lettuce. Continue regular irrigation cycles and check root oxygenation."
+            elif crop_id == "basil":
+                return f"Sweet Basil is thriving under the {mock_engine.SHARED_OVERRIDE.get('led_mode', 'full')} spectrum. Current temperature of {current_temp}°C promotes volatile oils production. Maintain short watering pulses."
+            else:  # tomato
+                return f"Fruiting stage initialized for Cherry Tomato. Nutrient loop NPK ratios are aligned. Ensure LED spectrum is fully set to bloom profile to maximize flower-to-fruit conversion."
+
+    if not gemini_client:
+        print("⚠️ Gemini client not ready. Returning dynamic local prescription.")
+        return {
+            "text": generate_fallback_recommendation(),
+            "confidence": 95 if not drama_type else 80,
+            "context": f"Localized dynamic agronomist ruleset for {crop_name}"
+        }
+        
+    try:
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        recommendation_text = response.text.strip()
+        confidence = 92 if not drama_type else 85
+        return {
+            "text": recommendation_text,
+            "confidence": confidence,
+            "context": f"Gemini 2.5 Flash agronomist evaluation for {crop_name}"
+        }
+    except Exception as e:
+        print(f"⚠️ Gemini API failed during agronomist recommendation: {e}")
+        return {
+            "text": generate_fallback_recommendation(),
+            "confidence": 88,
+            "context": f"Fallback agronomist ruleset for {crop_name} (Gemini failed)"
+        }
+
+# --- Crop SWITCH Orchestration Endpoint ---
+@app.post("/api/crop/switch", response_model=CropSwitchResponse)
+async def switch_crop(payload: CropSwitchPayload):
+    crop_id = payload.crop.lower()
+    profiles = load_plant_profiles()
+    if crop_id not in profiles:
+        raise HTTPException(status_code=400, detail=f"Crop '{crop_id}' profile not found.")
+    
+    # 1. Update mock engine's active crop
+    mock_engine.ACTIVE_CROP_ID = crop_id
+    
+    # 2. Trigger instant simulation re-alignment to new targets
+    targets = mock_engine.get_active_crop_targets()
+    mock_engine.SIM_STATE["temp"] = round(targets["temp_optimal"] + 1.2, 1)
+    mock_engine.SIM_STATE["ph"] = round(targets["ph_optimal"] - 0.12, 2)
+    mock_engine.SIM_STATE["moisture"] = round(targets["moisture_optimal"] - 4.5, 1)
+    mock_engine.SIM_STATE["humidity"] = round(targets["humidity_optimal"] + 2.5, 1)
+    mock_engine.SIM_STATE["nitrogen"] = round(targets["nitrogen_ppm"] - 12.0, 1)
+    mock_engine.SIM_STATE["phosphorus"] = round(targets["phosphorus_ppm"] - 3.5, 1)
+    mock_engine.SIM_STATE["potassium"] = round(targets["potassium_ppm"] - 18.0, 1)
+    
+    # Broadcast shifting presets message to Action center
+    mock_engine.SHARED_ACTIONS.append(f"System: Orchestration profiles shifted to {profiles[crop_id]['name']}.")
+    mock_engine.STATE_CHANGED_EVENT.set()
+    mock_engine.STATE_CHANGED_EVENT.clear()
+    
+    ledger = generate_allocation_ledger(crop_id)
+    
+    log_msg = f"[MARDI Orchestration] Crop preset switched to {profiles[crop_id]['name']} (optimal temp: {targets['temp_min']}°C-{targets['temp_max']}°C, pH: {targets['ph_min']}-{targets['ph_max']}). Recalibrating dosing pumps & closed-loop HVAC thresholds."
+    
+    return CropSwitchResponse(
+        profile=profiles[crop_id],
+        log_message=log_msg,
+        allocation_ledger=ledger
+    )
+
+# --- Web3 Blockchain Endpoints ---
+@app.post("/api/blockchain/prebook-allocation", response_model=AllocationLedger)
+async def prebook_allocation(payload: dict):
+    crop = payload.get("crop", mock_engine.ACTIVE_CROP_ID).lower()
+    return generate_allocation_ledger(crop)
+
+@app.post("/api/blockchain/procure", response_model=ProcurementResponse)
+async def procure_item(payload: ProcurementPayload):
+    import random
+    # For the hackathon demo, we use a real, validated transaction hash on Arbitrum Sepolia 
+    # to ensure that clicking "Explorer" loads a live, successful transaction page on Arbiscan 
+    # instead of a "Transaction Not Found" 404 error.
+    tx_hash = "0x95d75352afcbe2fc1986b549ea86e4d396fe40c20a36201643a6da2302326b11"
+    contract_address = "0x" + "".join(random.choices("0123456789abcdef", k=40))
+    explorer_url = f"https://sepolia.arbiscan.io/tx/{tx_hash}"
+    
+    log_message = f"[Arbitrum Web3] Smart escrow contract successfully deployed at {contract_address[:10]}... for item '{payload.item_id}'. Locked MYR {payload.cost_myr:.2f}."
+    
+    mock_engine.SHARED_ACTIONS.append(f"Web3: Escrow contract deployed for item {payload.item_id}.")
+    mock_engine.STATE_CHANGED_EVENT.set()
+    mock_engine.STATE_CHANGED_EVENT.clear()
+    
+    return ProcurementResponse(
+        status="success",
+        tx_hash=tx_hash,
+        contract_address=contract_address,
+        log_message=log_message,
+        supplier_notified=True,
+        explorer_url=explorer_url
+    )
+
+@app.post("/api/blockchain/agro-lend", response_model=LendingResponse)
+async def evaluate_agro_lend():
+    active_alerts_count = len(mock_engine.ACTIVE_ALERTS)
+    
+    if active_alerts_count == 0:
+        stability_score = 98.5
+        credit_limit = 150000.00
+        offer_name = "Agrobank Malaysia - Young Entrepreneur Agrotech Fund (Special Tier A)"
+    elif active_alerts_count == 1:
+        stability_score = 75.0
+        credit_limit = 50000.00
+        offer_name = "CIMB Islamic Agtech Micro-Financing Scheme"
+    else:
+        stability_score = 35.2
+        credit_limit = 10000.00
+        offer_name = "Agrobank Emergency Crop Micro-Lend"
+        
+    usdc_rate = 4.45
+    usdc_eq = credit_limit / usdc_rate
+    
+    log_message = (
+        f"[Agri-Underwriter] Underwriting audit complete. Stability Score: {stability_score}%. "
+        f"Approved for {offer_name} with credit limit of RM {credit_limit:,.2f} ({usdc_eq:,.2f} USDC)."
+    )
+    
+    return LendingResponse(
+        status="approved" if stability_score > 50.0 else "conditional_approval",
+        credit_limit_myr=credit_limit,
+        usdc_equivalent=round(usdc_eq, 2),
+        log_message=log_message
+    )
 
 # --- Crop Profiles Endpoints ---
 class CropProfile(BaseModel):
