@@ -24,6 +24,64 @@ ALERT_COOLDOWNS = {}
 STATE_CHANGED_EVENT = asyncio.Event()
 LATEST_CV_DATA = None
 
+# --- Dynamic Crop Orchestration & plant profiles ---
+ACTIVE_CROP_ID = "lettuce"
+PLANT_PROFILES = {}
+
+def load_profiles():
+    global PLANT_PROFILES
+    try:
+        import os, json
+        path = os.path.join(os.path.dirname(__file__), "plant_profiles.json")
+        with open(path, "r", encoding="utf-8") as f:
+            PLANT_PROFILES = json.load(f)
+            print(f"✅ Loaded {len(PLANT_PROFILES)} plant profiles successfully in mock_engine")
+    except Exception as e:
+        print(f"⚠️ Failed to load plant profiles: {e}")
+
+# Pre-load on startup
+load_profiles()
+
+def get_active_crop_targets() -> dict:
+    if not PLANT_PROFILES:
+        load_profiles()
+    crop_profile = PLANT_PROFILES.get(ACTIVE_CROP_ID, PLANT_PROFILES.get("lettuce"))
+    if not crop_profile:
+        # Emergency robust fallback
+        return {
+            "temp_min": 21.0, "temp_max": 24.0, "temp_optimal": 22.5,
+            "moisture_min": 45.0, "moisture_max": 60.0, "moisture_optimal": 52.5,
+            "humidity_min": 55.0, "humidity_max": 65.0, "humidity_optimal": 60.0,
+            "ph_min": 6.0, "ph_max": 6.4, "ph_optimal": 6.2,
+            "nitrogen_ppm": 120.0, "phosphorus_ppm": 40.0, "potassium_ppm": 180.0
+        }
+    
+    ideals = crop_profile["summary"]["ideal_conditions"]
+    nutrients = crop_profile["summary"]["nutrient_requirements"]
+    
+    return {
+        "temp_min": ideals["temperature_c"]["min"],
+        "temp_max": ideals["temperature_c"]["max"],
+        "temp_optimal": ideals["temperature_c"].get("optimal", (ideals["temperature_c"]["min"] + ideals["temperature_c"]["max"]) / 2.0),
+        "moisture_min": ideals["moisture_pct"]["min"],
+        "moisture_max": ideals["moisture_pct"]["max"],
+        "moisture_optimal": ideals["moisture_pct"].get("optimal", (ideals["moisture_pct"]["min"] + ideals["moisture_pct"]["max"]) / 2.0),
+        "humidity_min": ideals["humidity_pct"]["min"],
+        "humidity_max": ideals["humidity_pct"]["max"],
+        "humidity_optimal": ideals["humidity_pct"].get("optimal", (ideals["humidity_pct"]["min"] + ideals["humidity_pct"]["max"]) / 2.0),
+        "ph_min": ideals["ph_level"]["min"],
+        "ph_max": ideals["ph_level"]["max"],
+        "ph_optimal": ideals["ph_level"].get("optimal", (ideals["ph_level"]["min"] + ideals["ph_level"]["max"]) / 2.0),
+        "nitrogen_ppm": nutrients.get("nitrogen_ppm", 120.0),
+        "phosphorus_ppm": nutrients.get("phosphorus_ppm", 40.0),
+        "potassium_ppm": nutrients.get("potassium_ppm", 180.0)
+    }
+
+# --- Dynamic Sustainability Metric Accumulators ---
+CUMULATIVE_WATER_SAVED = 12.4
+CUMULATIVE_ENERGY_SAVED = 0.80
+CUMULATIVE_COST_SAVED = 15.20
+
 SIM_STATE = {
     "temp": 23.0,
     "ph": 6.2,
@@ -76,7 +134,6 @@ async def telemetry_generator():
             pass
         alerts = []
         # Collect and clear shared actions
-        actions = list(SHARED_ACTIONS)        # Collect and clear shared actions
         actions = list(SHARED_ACTIONS)
         SHARED_ACTIONS.clear()
         
@@ -85,30 +142,31 @@ async def telemetry_generator():
         led_mode = SHARED_OVERRIDE.get("led_mode", "full")
 
         # 2. Automated Controller Closed-Loop Decision Matrix (if autoMode is active)
+        targets = get_active_crop_targets()
         if auto_mode:
-            # Temperature regulation (target 21.0 - 24.0°C)
-            if SIM_STATE["temp"] > 24.5:
+            # Temperature regulation (cool if above max, fan off if below min)
+            if SIM_STATE["temp"] > targets["temp_max"]:
                 SHARED_OVERRIDE["fan"] = "on"
-            elif SIM_STATE["temp"] <= 22.0:
+            elif SIM_STATE["temp"] <= targets["temp_min"]:
                 SHARED_OVERRIDE["fan"] = "off"
                 
-            # Soil moisture regulation (target 45% - 60%)
-            if SIM_STATE["moisture"] < 45.0:
+            # Soil moisture regulation
+            if SIM_STATE["moisture"] < targets["moisture_min"]:
                 SHARED_OVERRIDE["pump"] = "on"
-            elif SIM_STATE["moisture"] >= 60.0:
+            elif SIM_STATE["moisture"] >= targets["moisture_max"]:
                 SHARED_OVERRIDE["pump"] = "off"
                 
-            # Relative humidity regulation (target 55% - 65%)
-            if SIM_STATE["humidity"] < 55.0:
+            # Relative humidity regulation
+            if SIM_STATE["humidity"] < targets["humidity_min"]:
                 SHARED_OVERRIDE["mist"] = "on"
-            elif SIM_STATE["humidity"] >= 65.0:
+            elif SIM_STATE["humidity"] >= targets["humidity_max"]:
                 SHARED_OVERRIDE["mist"] = "off"
 
-            # Hydroponic pH regulation (target 6.0 - 6.4)
-            if SIM_STATE["ph"] > 6.4:
+            # Hydroponic pH regulation
+            if SIM_STATE["ph"] > targets["ph_max"]:
                 SHARED_OVERRIDE["valveAcidic"] = True
                 SHARED_OVERRIDE["valveAlkaline"] = False
-            elif SIM_STATE["ph"] < 6.0:
+            elif SIM_STATE["ph"] < targets["ph_min"]:
                 SHARED_OVERRIDE["valveAcidic"] = False
                 SHARED_OVERRIDE["valveAlkaline"] = True
             else:
@@ -116,30 +174,25 @@ async def telemetry_generator():
                 SHARED_OVERRIDE["valveAlkaline"] = False
 
             # Dosing Valves Regulation for Crop Nutrition (NPK)
-            if SIM_STATE["nitrogen"] < 100.0:
+            if SIM_STATE["nitrogen"] < targets["nitrogen_ppm"] - 10.0:
                 SHARED_OVERRIDE["valveN"] = True
-            elif SIM_STATE["nitrogen"] >= 120.0:
+            elif SIM_STATE["nitrogen"] >= targets["nitrogen_ppm"]:
                 SHARED_OVERRIDE["valveN"] = False
 
-            if SIM_STATE["phosphorus"] < 35.0:
+            if SIM_STATE["phosphorus"] < targets["phosphorus_ppm"] - 5.0:
                 SHARED_OVERRIDE["valveP"] = True
-            elif SIM_STATE["phosphorus"] >= 40.0:
+            elif SIM_STATE["phosphorus"] >= targets["phosphorus_ppm"]:
                 SHARED_OVERRIDE["valveP"] = False
 
-            if SIM_STATE["potassium"] < 155.0:
+            if SIM_STATE["potassium"] < targets["potassium_ppm"] - 15.0:
                 SHARED_OVERRIDE["valveK"] = True
-            elif SIM_STATE["potassium"] >= 180.0:
+            elif SIM_STATE["potassium"] >= targets["potassium_ppm"]:
                 SHARED_OVERRIDE["valveK"] = False
 
         # 3. Retrieve resolved actuator baseline states
-        if not auto_mode:
-            fan_state = SHARED_OVERRIDE.get("fan", "off")
-            mist_state = SHARED_OVERRIDE.get("mist", "off")
-            current_pump = SHARED_OVERRIDE.get("pump", "off")
-        else:
-            fan_state = SHARED_OVERRIDE.get("fan", "off")
-            mist_state = SHARED_OVERRIDE.get("mist", "off")
-            current_pump = SHARED_OVERRIDE.get("pump", "off")
+        fan_state = SHARED_OVERRIDE.get("fan", "off")
+        mist_state = SHARED_OVERRIDE.get("mist", "off")
+        current_pump = SHARED_OVERRIDE.get("pump", "off")
             
         # 4. Scenario-specific overrides
         if drama_type == "depletion":
@@ -162,6 +215,33 @@ async def telemetry_generator():
             if current_pump == "on":
                 actions.append("Alert: Dry-run protection active. Pump disabled.")
             current_pump = "off"
+
+        # --- Dynamic Sustainability Metric Calculation ---
+        global CUMULATIVE_WATER_SAVED, CUMULATIVE_ENERGY_SAVED, CUMULATIVE_COST_SAVED
+        
+        # Base saving rates per tick (2 seconds)
+        base_water_saved = 0.015  # liters
+        base_energy_saved = 0.0008  # kWh
+        
+        # Actuator-specific saving rates per tick
+        # Closed-loop hydroponics pump saves massive water compared to flood irrigation
+        pump_water_saved = 0.035 if current_pump == "on" else 0.0
+        # Optimal fan controls save energy compared to 24/7 commercial ventilation
+        fan_energy_saved = 0.0015 if fan_state == "off" else 0.0
+        # LED Dimming and Spectral adaptation (purple) saves electricity
+        led_energy_saved = 0.001 if led_mode != "full" else 0.0002
+        
+        tick_water = base_water_saved + pump_water_saved
+        tick_energy = base_energy_saved + fan_energy_saved + led_energy_saved
+        
+        CUMULATIVE_WATER_SAVED += tick_water
+        CUMULATIVE_ENERGY_SAVED += tick_energy
+        
+        # Malaysian economic context: Water RM 0.80/m3, Electricity RM 0.37/kWh (TNB Agriculture tariff)
+        # Plus biosecurity pesticide/fungicide/fertilizer savings, labor optimization
+        # We approximate at RM 0.005 base cost savings per tick plus TNB & water tariffs
+        tick_cost = (tick_water * 0.002) + (tick_energy * 0.37) + 0.005
+        CUMULATIVE_COST_SAVED += tick_cost
 
         # 6. Reservoir Alerts Trigger
         if SIM_STATE["tank_level"] <= 15.0:
@@ -241,58 +321,58 @@ async def telemetry_generator():
             # Handles natural drift AND response physics when actuators are on or off!
             
             # A. Temperature physics:
-            # - If fan is ON: cools down toward 21.5°C
-            # - If fan is OFF: heats up from grow lights towards 29.5°C
+            # - If fan is ON: cools down toward targets["temp_min"]
+            # - If fan is OFF: heats up from grow lights towards targets["temp_max"] + 5.0
             t_current = SIM_STATE["temp"]
             if fan_state == "on":
-                t_target = 21.5
+                t_target = targets["temp_min"] - 0.5
                 t_delta = -0.15
             else:
-                t_target = 29.5
+                t_target = targets["temp_max"] + 5.0
                 t_delta = 0.1
             t_new = t_current + (t_target - t_current) * 0.04 + t_delta + random.uniform(-0.07, 0.07)
             SIM_STATE["temp"] = round(max(15.0, min(38.0, t_new)), 1)
 
             # B. Moisture physics:
-            # - If pump is ON: moisture rises towards 75.0%
-            # - If pump is OFF: moisture dries out towards 30.0%
+            # - If pump is ON: moisture rises towards targets["moisture_max"] + 15.0
+            # - If pump is OFF: moisture dries out towards targets["moisture_min"] - 15.0
             m_current = SIM_STATE["moisture"]
             if current_pump == "on":
-                m_target = 75.0
+                m_target = targets["moisture_max"] + 15.0
                 m_delta = 0.9
             else:
-                m_target = 30.0
+                m_target = targets["moisture_min"] - 15.0
                 m_delta = -0.2
             m_new = m_current + (m_target - m_current) * 0.04 + m_delta + random.uniform(-0.15, 0.15)
             SIM_STATE["moisture"] = round(max(10.0, min(90.0, m_new)), 1)
 
             # C. Humidity physics:
-            # - If mist is ON: humidity rises towards 85.0%
-            # - If mist is OFF: humidity dries towards 42.0%
+            # - If mist is ON: humidity rises towards targets["humidity_max"] + 20.0
+            # - If mist is OFF: humidity dries towards targets["humidity_min"] - 20.0
             h_current = SIM_STATE["humidity"]
             if mist_state == "on":
-                h_target = 85.0
+                h_target = targets["humidity_max"] + 20.0
                 h_delta = 0.6
             else:
-                h_target = 42.0
+                h_target = targets["humidity_min"] - 20.0
                 h_delta = -0.3
             h_new = h_current + (h_target - h_current) * 0.04 + h_delta + random.uniform(-0.1, 0.1)
             SIM_STATE["humidity"] = round(max(25.0, min(95.0, h_new)), 1)
 
             # D. pH physics (only apply physics if NOT running the active "ph_drop" simulation sequence):
-            # - If valveAcidic is ON: pH drops towards 5.4
-            # - If valveAlkaline is ON: pH rises towards 7.2
-            # - If both OFF: pH slowly drifts upwards towards 6.8
+            # - If valveAcidic is ON: pH drops towards targets["ph_min"] - 0.6
+            # - If valveAlkaline is ON: pH rises towards targets["ph_max"] + 0.8
+            # - If both OFF: pH slowly drifts upwards towards targets["ph_optimal"] + 0.4
             if drama_type != "ph_drop":
                 ph_current = SIM_STATE["ph"]
                 if SHARED_OVERRIDE.get("valveAcidic", False):
-                    ph_target = 5.4
+                    ph_target = targets["ph_min"] - 0.6
                     ph_delta = -0.045
                 elif SHARED_OVERRIDE.get("valveAlkaline", False):
-                    ph_target = 7.2
+                    ph_target = targets["ph_max"] + 0.8
                     ph_delta = 0.045
                 else:
-                    ph_target = 6.8
+                    ph_target = targets["ph_optimal"] + 0.4
                     ph_delta = 0.005  # natural alkaline drift
                 ph_new = ph_current + (ph_target - ph_current) * 0.03 + ph_delta + random.uniform(-0.005, 0.005)
                 SIM_STATE["ph"] = round(max(4.2, min(8.8, ph_new)), 2)
@@ -302,37 +382,37 @@ async def telemetry_generator():
             if drama_type != "nitrogen_depletion":
                 n_current = SIM_STATE["nitrogen"]
                 if SHARED_OVERRIDE.get("valveN", False):
-                    n_target = 125.0
+                    n_target = targets["nitrogen_ppm"] + 5.0
                     n_delta = 1.25
                 else:
-                    n_target = 30.0
+                    n_target = targets["nitrogen_ppm"] - 80.0
                     n_delta = -0.15  # continuous crop consumption
                 n_new = n_current + (n_target - n_current) * 0.03 + n_delta
-                SIM_STATE["nitrogen"] = round(max(20.0, min(150.0, n_new)), 1)
+                SIM_STATE["nitrogen"] = round(max(20.0, min(200.0, n_new)), 1)
 
             # Phosphorus (P)
             if drama_type != "phosphorus_depletion":
                 p_current = SIM_STATE["phosphorus"]
                 if SHARED_OVERRIDE.get("valveP", False):
-                    p_target = 42.0
+                    p_target = targets["phosphorus_ppm"] + 2.0
                     p_delta = 0.5
                 else:
-                    p_target = 8.0
+                    p_target = targets["phosphorus_ppm"] - 25.0
                     p_delta = -0.05
                 p_new = p_current + (p_target - p_current) * 0.03 + p_delta
-                SIM_STATE["phosphorus"] = round(max(5.0, min(55.0, p_new)), 1)
+                SIM_STATE["phosphorus"] = round(max(5.0, min(80.0, p_new)), 1)
 
             # Potassium (K)
             if drama_type != "potassium_depletion":
                 k_current = SIM_STATE["potassium"]
                 if SHARED_OVERRIDE.get("valveK", False):
-                    k_target = 185.0
+                    k_target = targets["potassium_ppm"] + 5.0
                     k_delta = 1.75
                 else:
-                    k_target = 50.0
+                    k_target = targets["potassium_ppm"] - 100.0
                     k_delta = -0.2
                 k_new = k_current + (k_target - k_current) * 0.03 + k_delta
-                SIM_STATE["potassium"] = round(max(30.0, min(220.0, k_new)), 1)
+                SIM_STATE["potassium"] = round(max(30.0, min(280.0, k_new)), 1)
 
         # Auto-clear mechanical/environmental alerts after 60 seconds
         for alert in alerts:
@@ -407,9 +487,9 @@ async def telemetry_generator():
             "actions": actions,
             "cv_data": LATEST_CV_DATA,
             "impact_metrics": {
-                "water_saved_liters": round(12.4 + random.uniform(0, 0.5), 1),
-                "energy_saved_kwh": round(0.8 + random.uniform(0, 0.2), 2),
-                "cost_saved_my_r": round(15.2 + random.uniform(0, 1), 2)
+                "water_saved_liters": round(CUMULATIVE_WATER_SAVED, 1),
+                "energy_saved_kwh": round(CUMULATIVE_ENERGY_SAVED, 2),
+                "cost_saved_my_r": round(CUMULATIVE_COST_SAVED, 2)
             }
         }
         
