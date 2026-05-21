@@ -1,7 +1,6 @@
 import React from 'react'
 import { useFarmStore } from '../../../store/useFarmStore'
 import { useShallow } from 'zustand/react/shallow'
-import { motion } from 'framer-motion'
 import { Droplet, Wind, Cpu, Sprout, Thermometer, Zap, AlertTriangle, Activity } from 'lucide-react'
 
 export default function ComponentDetails() {
@@ -65,7 +64,7 @@ export default function ComponentDetails() {
                 'Harvest Ready (Day 42)'
               } 
             />
-            <DetailRow icon={<Zap />} label="Light Level (PPFD)" value={actuators.led === 'full' ? '800 µmol' : actuators.led === 'dimmed' ? '400 µmol' : '0 µmol'} />
+            <DetailRow icon={<Zap />} label="Light Level (PPFD)" value={actuators.led === 'full' ? '800 µmol' : actuators.led === 'purple' ? '400 µmol' : '0 µmol'} />
 
             {/* Showcase Rack Status Badges */}
             {/* Since all racks share the centralized water loop (Option B), a Nitrogen deficiency in the main tank affects all racks! */}

@@ -23,7 +23,7 @@ function DemoController() {
 
   const triggerScenario = async (type: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/demo/scenario?type=${type}`, { method: 'POST' })
+      const response = await fetch(`/api/demo/scenario?type=${type}`, { method: 'POST' })
       const data = await response.json()
       if (data.status !== 'scenario_queued') {
         addToast(`Requested scenario: ${type.toUpperCase()}`, 'success')
@@ -92,7 +92,7 @@ function DemoController() {
   const scenarioBiological = async () => {
     setOpen(false)
     try {
-      const res = await fetch('http://localhost:8000/api/demo/auto-scan', { method: 'POST' })
+      const res = await fetch('/api/demo/auto-scan', { method: 'POST' })
       const data = await res.json()
       useFarmStore.getState().setCvData(data)
 
@@ -128,12 +128,12 @@ function DemoController() {
         }
       })
       // Also sync fan + mist state to backend so it persists over WebSocket
-      fetch('http://localhost:8000/api/control', {
+      fetch('/api/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actuator: 'fan', state: 'on', autoMode: false })
       }).catch(() => null)
-      fetch('http://localhost:8000/api/control', {
+      fetch('/api/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actuator: 'mist', state: 'on', autoMode: false })

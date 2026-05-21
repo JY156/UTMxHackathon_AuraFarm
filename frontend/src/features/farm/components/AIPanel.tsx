@@ -23,13 +23,14 @@ const PROCUREMENT_REQUEST = {
 }
 
 function AIPanel() {
-  const { aiRec, fetchAI, cvData, alerts, profile } = useFarmStore(
+  const { aiRec, fetchAI, cvData, alerts, profile, sensors } = useFarmStore(
     useShallow((state) => ({ 
       aiRec: state.aiRec, 
       fetchAI: state.fetchAI,
       cvData: state.cvData,
       alerts: state.alerts,
-      profile: state.profile
+      profile: state.profile,
+      sensors: state.sensors
     })),
   )
   const addToast = useFarmStore((state) => state.addToast)
@@ -200,6 +201,43 @@ function AIPanel() {
     cycleText = 'Flowering State'
   }
 
+  // Calculate dynamic alignment score based on current sensor deviations from optimal ranges
+  let alignmentScore = 95
+  if (sensors && profile?.optimal) {
+    let totalScore = 0
+    let count = 0
+    for (const [key, range] of Object.entries(profile.optimal)) {
+      const sensorVal = sensors[key as keyof typeof sensors]
+      if (typeof sensorVal === 'number') {
+        const [min, max] = range
+        if (sensorVal >= min && sensorVal <= max) {
+          totalScore += 100
+        } else {
+          const deviation = Math.min(Math.abs(sensorVal - min), Math.abs(sensorVal - max))
+          const penalty = Math.max(0, 100 - (deviation / min) * 100)
+          totalScore += penalty
+        }
+        count++
+      }
+    }
+    if (count > 0) {
+      alignmentScore = Math.round(totalScore / count)
+    }
+  }
+
+  // Calculate dynamic date harvest window based on daysToHarvest and current date
+  const getHarvestWindow = () => {
+    const today = new Date()
+    const start = new Date(today)
+    start.setDate(today.getDate() + daysToHarvest)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 2) // 2-day harvest window
+    
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', { day: 'numeric' })}`
+  }
+  const harvestWindow = getHarvestWindow()
+
   // 3. Hardware Attention points
   const attentionItems = [
     {
@@ -272,9 +310,8 @@ function AIPanel() {
         </button>
       </header>
 
-      {/* 2. 3-Column Metrics Dashboard Widget Row */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        
+      {/* Responsive Grid for Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Card 1: Canopy Health */}
         <div className="flex flex-col items-center gap-5 rounded-[32px] border border-white/5 bg-black/40 p-6 backdrop-blur-xl hover:border-white/10 transition-all duration-300">
           
@@ -313,12 +350,12 @@ function AIPanel() {
             </div>
           </div>
 
-          <p className="text-[11px] font-semibold leading-relaxed text-slate-300 text-center min-h-[32px]">
-            {hasLeafRust 
-              ? 'Pathogen detected on Rack 3. Suppression system fully active.' 
-              : activeDeficiencies > 0 
-                ? 'Canopy deficit detected. Automated nutrient dosing loop engaged.' 
-                : 'All foliage parameters, height, and chlorophyll are optimal.'}
+          <p className={`text-[11px] font-semibold leading-relaxed text-slate-300 text-center min-h-[32px] transition-all duration-500 ${
+            (aiRec.loading || !aiRec.text) ? 'filter blur-[5px] select-none opacity-40 scale-[0.98]' : ''
+          }`}>
+            {aiRec.loading || !aiRec.text
+              ? 'Synthesizing live IoT telemetry data, analyzing crop vision anomalies, and generating expert agronomist suggestions...'
+              : aiRec.text}
           </p>
 
           <div className="grid grid-cols-2 gap-4 w-full border-t border-white/5 pt-4">
@@ -341,6 +378,19 @@ function AIPanel() {
               </span>
             </div>
           </div>
+
+          {!aiRec.loading && aiRec.confidence > 0 && (
+            <div className="flex items-center justify-between w-full border-t border-white/5 pt-3.5 mt-1">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">AI Confidence</span>
+                <span className="text-xs font-black text-emerald-400">{aiRec.confidence}%</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Neural Engine</span>
+                <span className="text-[10px] font-bold text-slate-300 truncate max-w-[120px]">{aiRec.context || 'Gemini 2.5 Flash'}</span>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -427,11 +477,11 @@ function AIPanel() {
             <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-3">
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Alignment</span>
-                <span className="text-xs font-black text-white">94%</span>
+                <span className="text-xs font-black text-white">{alignmentScore}%</span>
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Window</span>
-                <span className="text-xs font-black text-cyan-400">May 22-24</span>
+                <span className="text-xs font-black text-cyan-400">{harvestWindow}</span>
               </div>
             </div>
           </div>

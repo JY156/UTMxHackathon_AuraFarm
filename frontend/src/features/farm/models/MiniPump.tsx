@@ -1,9 +1,8 @@
-import type { GroupProps } from '@react-three/fiber';
 import * as THREE from 'three'
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 
-type MiniPumpProps = GroupProps & {
+type MiniPumpProps = any & {
   active?: boolean
   color?: string
 }

@@ -43,10 +43,12 @@ function ImpactTracker() {
     },
   ]
 
+  const activeImpact = impact || { waterSaved: 0, energySaved: 0, costSaved: 0 }
+
   const stats = [
-    { label: 'Water Conservation', value: impact.waterSaved, baseline: baseline.waterSaved, unit: 'Liters', icon: Droplets, color: 'cyan', description: 'Reduction vs traditional soil' },
-    { label: 'Energy Optimization', value: impact.energySaved, baseline: baseline.energySaved, unit: 'kWh', icon: Zap, color: 'amber', description: 'Smart lighting efficiency' },
-    { label: 'Operation Yield', value: impact.costSaved, baseline: baseline.costSaved, unit: 'RM', icon: DollarSign, color: 'emerald', description: 'Total automated savings' },
+    { label: 'Water Conservation', value: activeImpact.waterSaved, baseline: baseline.waterSaved, unit: 'Liters', icon: Droplets, color: 'cyan', description: 'Reduction vs traditional soil' },
+    { label: 'Energy Optimization', value: activeImpact.energySaved, baseline: baseline.energySaved, unit: 'kWh', icon: Zap, color: 'amber', description: 'Smart lighting efficiency' },
+    { label: 'Operation Yield', value: activeImpact.costSaved, baseline: baseline.costSaved, unit: 'RM', icon: DollarSign, color: 'emerald', description: 'Total automated savings' },
   ]
 
   const startLendingFlow = async () => {
