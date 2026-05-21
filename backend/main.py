@@ -20,11 +20,10 @@ from dotenv import load_dotenv
 
 # --- NEW: Google GenAI (replaces deprecated google.generativeai) ---
 from google import genai
-from google.genai import types
 
 # --- Local imports ---
 from schemas import (
-    WebSocketPayload, Alert, Severity,
+    Alert, Severity,
     CropSwitchPayload, CropSwitchResponse,
     ProcurementPayload, ProcurementResponse,
     LendingResponse, AllocationLedger, AllocationLedgerAllocation
@@ -546,7 +545,7 @@ async def get_ai_recommendation():
         
     try:
         response = gemini_client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.1-flash-lite",
             contents=prompt
         )
         recommendation_text = response.text.strip()
@@ -554,7 +553,7 @@ async def get_ai_recommendation():
         return {
             "text": recommendation_text,
             "confidence": confidence,
-            "context": f"Gemini 2.5 Flash agronomist evaluation for {crop_name}"
+            "context": f"gemini-3.1-flash-lite agronomist evaluation for {crop_name}"
         }
     except Exception as e:
         print(f"⚠️ Gemini API failed during agronomist recommendation: {e}")
@@ -762,9 +761,9 @@ async def analyze_plant_vision(
         Return ONLY JSON, no markdown formatting.
         """
         
-        # Generate with Gemini 2.5 Flash
+        # Generate with Gemini 3.5 Flash
         response = gemini_client.models.generate_content(
-            model="gemini-2.5-flash",  # ← Correct model name
+            model="gemini-3.1-flash-lite",
             contents=[prompt, image]
         )
         

@@ -41,7 +41,7 @@ function AlertSystem() {
         repeat: -1,
         ease: 'sine.inOut',
         stagger: 0.5
-      })
+      } as any)
     }
   }, { dependencies: [criticalAlerts.length], scope: alertContainer })
 

@@ -116,6 +116,7 @@ export interface CVData {
   }
   visual_symptoms: string[]
   recommendations: string[]
+  image_url?: string
 }
 
 
@@ -224,7 +225,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       }
 
       return nextState
-    }, replace)
+    }, replace as any)
   }
 
   return {
@@ -255,7 +256,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
   allocationLedger: null,
 
   syncFromBackend: (payload) =>
-    set((state) => {
+    set((state: FarmState) => {
       console.log('📥 Received payload:', {
         hasAlerts: !!(payload.alerts && payload.alerts.length > 0),
         alertTypes: payload.alerts?.map((a: any) => a.type),
@@ -282,7 +283,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
         const payloadAlerts = payload.alerts
 
         // 1. Update existing alerts in store
-        const updatedAlerts = state.alerts.map(existingAlert => {
+        const updatedAlerts = state.alerts.map((existingAlert: Alert) => {
           const incoming = payloadAlerts.find(a => a.id === existingAlert.id)
           if (incoming) {
             // It is active on the backend!
@@ -309,10 +310,10 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
         })
 
         // 2. Identify and map brand new alerts
-        const existingIds = new Set(state.alerts.map(a => a.id))
-        const newAlertsFromPayload = payloadAlerts.filter(a => !existingIds.has(a.id))
+        const existingIds = new Set(state.alerts.map((a: Alert) => a.id))
+        const newAlertsFromPayload = payloadAlerts.filter((a: any) => !existingIds.has(a.id))
 
-        const newAlerts = newAlertsFromPayload.map(a => ({
+        const newAlerts = newAlertsFromPayload.map((a: any) => ({
           ...a,
           id: a.id || createId(),
           resolved: false,
@@ -320,7 +321,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
         }))
 
         // Trigger TTS for new critical alerts
-        newAlerts.forEach(alert => {
+        newAlerts.forEach((alert: Alert) => {
           if (alert.severity === 'critical' && typeof window !== 'undefined' && window.speechSynthesis) {
             try {
               let speechText = `Critical alert: ${alert.message}`
@@ -356,10 +357,10 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       // Handle server-issued actions
       let nextToasts = state.toasts
       if (payload.actions && Array.isArray(payload.actions)) {
-        payload.actions.forEach(action => {
+        payload.actions.forEach((action: string) => {
           if (typeof action === 'string' && action.startsWith('RESOLVE_ALERT:')) {
             const idToResolve = action.split(':')[1]
-            nextAlerts = nextAlerts.map(alert =>
+            nextAlerts = nextAlerts.map((alert: Alert) =>
               alert.id === idToResolve ? { ...alert, resolved: true, resolvedAt: Date.now() } : alert
             )
           }
@@ -367,7 +368,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       }
 
       if (newActions.length > 0) {
-        newActions.forEach(action => {
+        newActions.forEach((action: string) => {
           let displayMsg = action
           let type: 'info' | 'success' | 'error' = 'info'
           if (action.startsWith('RESOLVE_ALERT:')) {
@@ -400,13 +401,13 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
   setConnectionStatus: (status, attempts = 0) => set({ connectionStatus: status, connectionAttempts: attempts }),
 
   toggleActuator: (actuator) => {
-    set((state) => {
+    set((state: FarmState) => {
       // Optimistic UI update. Real sync logic should send POST to backend.
       if (!state.actuators) return state
 
       const newVal = !state.actuators[actuator]
 
-      fetch('http://localhost:8000/api/control', {
+      fetch('/api/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ actuator, state: newVal ? 'on' : 'off', autoMode: false })
@@ -426,10 +427,10 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
   },
 
   setLedMode: (mode) => {
-    set((state) => {
+    set((state: FarmState) => {
       if (!state.actuators) return state
 
-      fetch('http://localhost:8000/api/control', {
+      fetch('/api/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ led_mode: mode, autoMode: false })
@@ -449,9 +450,9 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
   },
 
   toggleAutoMode: () => {
-    set((state) => {
+    set((state: FarmState) => {
       const newMode = !state.autoMode
-      fetch('http://localhost:8000/api/control', {
+      fetch('/api/control', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ autoMode: newMode })
@@ -469,20 +470,20 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
   },
 
   resolveAlert: (id) => {
-    fetch('http://localhost:8000/api/alert/resolve', {
+    fetch('/api/alert/resolve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
     }).catch(console.error)
 
-    set((state) => {
-      const alertToResolve = state.alerts.find(a => a.id === id)
+    set((state: FarmState) => {
+      const alertToResolve = state.alerts.find((a: Alert) => a.id === id)
       if (!alertToResolve) return state
 
       const message = `${alertToResolve.type.replace('_', ' ').toUpperCase()} RESOLVED`
 
       return {
-        alerts: state.alerts.map((alert) =>
+        alerts: state.alerts.map((alert: Alert) =>
           alert.id === id ? { ...alert, resolved: true, resolvedAt: Date.now() } : alert,
         ),
         toasts: [...state.toasts, { id: createId(), message, type: 'success' }]
@@ -491,22 +492,22 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
   },
 
   addToast: (message, type = 'info') =>
-    set((state) => ({
+    set((state: FarmState) => ({
       toasts: [...state.toasts, { id: createId(), message, type }]
     })),
 
   removeToast: (id) =>
-    set((state) => ({
-      toasts: state.toasts.filter(t => t.id !== id)
+    set((state: FarmState) => ({
+      toasts: state.toasts.filter((t: Toast) => t.id !== id)
     })),
 
   loadProfile: (profile) => set({ profile }),
 
   fetchAI: async () => {
-    set((state) => ({ aiRec: state.aiRec ? { ...state.aiRec, loading: true } : null }))
+    set((state: FarmState) => ({ aiRec: state.aiRec ? { ...state.aiRec, loading: true } : null }))
 
     try {
-      const response = await fetch('http://localhost:8000/api/ai/recommend')
+      const response = await fetch('/api/ai/recommend')
       if (!response.ok) throw new Error('Failed to fetch AI recommendation')
       const data = await response.json()
 
@@ -522,7 +523,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       })
     } catch (error) {
       console.error(error)
-      set((state) => ({
+      set((state: FarmState) => ({
         aiRec: state.aiRec ? { ...state.aiRec, loading: false } : null,
         toasts: [...state.toasts, { id: createId(), message: 'Failed to reach AI Engine', type: 'error' }]
       }))
@@ -539,20 +540,20 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
     console.log("Current Actuators:", get().actuators);
 
     // Let's add a robust toast that always appears instantly!
-    set((state) => ({
+    set((state: FarmState) => ({
       toasts: [...state.toasts, { id: createId(), message: `DEBUG: pH Drop Clicked (Mode: ${isConnected ? 'Online' : 'Offline'})`, type: 'info' }]
     }))
 
     if (isConnected) {
       // Online mode: Optimistic UI update + backend scenario dispatch
-      set((state) => {
+      set((state: FarmState) => {
         const currentSensors = state.sensors || demoSensors
         return {
           sensors: { ...currentSensors, ph: 4.8 },
           toasts: [...state.toasts, { id: createId(), message: 'Alert: pH dropped to 4.8! Alerting automation controller...', type: 'error' }]
         }
       })
-      fetch('http://localhost:8000/api/demo/scenario?type=ph_drop', {
+      fetch('/api/demo/scenario?type=ph_drop', {
         method: 'POST'
       }).then(res => {
         console.log("pH Drop POST result status:", res.status);
@@ -564,7 +565,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
 
     // Offline mode: High-fidelity step-by-step local simulation
     // Stage 1: pH Drop
-    set((state) => {
+    set((state: FarmState) => {
       const currentSensors = state.sensors || demoSensors
       return {
         sensors: { ...currentSensors, ph: 4.8 },
@@ -574,7 +575,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
 
     // Stage 2: After 3 seconds, turn pump on and show toast
     setTimeout(() => {
-      set((state) => {
+      set((state: FarmState) => {
         const currentActuators = state.actuators || demoActuators
         return {
           actuators: { ...currentActuators, valveAlkaline: true },
@@ -587,7 +588,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       let currentStep = 0
       const interval = setInterval(() => {
         currentStep++
-        set((state) => {
+        set((state: FarmState) => {
           const currentSensors = state.sensors || demoSensors
           const phVal = Number((4.8 + (6.2 - 4.8) * (currentStep / steps)).toFixed(2))
           return {
@@ -598,7 +599,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
         if (currentStep >= steps) {
           clearInterval(interval)
           // Stage 4: Stabilize
-          set((state) => {
+          set((state: FarmState) => {
             const currentActuators = state.actuators || demoActuators
             return {
               actuators: { ...currentActuators, valveAlkaline: false },
@@ -616,13 +617,13 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
 
   // Apply a hardware profile (LED schedule, dosing targets) to the local store
   setHardwareProfile: (profile) => {
-    set((state) => ({ profile, automationLog: [...state.automationLog, `[SYSTEM] Hardware profile applied: ${profile.name}`].slice(-5), toasts: [...state.toasts, { id: createId(), message: `Hardware profile applied: ${profile.name}`, type: 'success' }] }))
+    set((state: FarmState) => ({ profile, automationLog: [...state.automationLog, `[SYSTEM] Hardware profile applied: ${profile.name}`].slice(-5), toasts: [...state.toasts, { id: createId(), message: `Hardware profile applied: ${profile.name}`, type: 'success' }] }))
   },
 
   // High-level crop switch orchestration: calls backend, applies profile, updates ledger + logs
   switchCrop: async (crop, verifiedParams) => {
     try {
-      const response = await fetch('http://localhost:8000/api/crop/switch', {
+      const response = await fetch('/api/crop/switch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ crop, params: verifiedParams || {} }),
@@ -634,7 +635,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
 
       // Apply profile locally
       if (data.profile) {
-        set((state) => ({
+        set((state: FarmState) => ({
           profile: data.profile,
           actuators: state.actuators ? { ...state.actuators, led: data.profile.preferred_led_mode || state.actuators!.led } : state.actuators,
           automationLog: [...state.automationLog, data.log_message || `Switched crop to ${crop}`].slice(-5),
@@ -648,7 +649,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       }
     } catch (err) {
       console.error('switchCrop error', err)
-      set((state) => ({ toasts: [...state.toasts, { id: createId(), message: 'Crop switch failed', type: 'error' }] }))
+      set((state: FarmState) => ({ toasts: [...state.toasts, { id: createId(), message: 'Crop switch failed', type: 'error' }] }))
     }
   },
 
@@ -679,13 +680,13 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
     }
 
     // Let's add a robust toast that always appears instantly!
-    set((state) => ({
+    set((state: FarmState) => ({
       toasts: [...state.toasts, { id: createId(), message: `DEBUG: Deplete ${capLetter} Clicked (Mode: ${isConnected ? 'Online' : 'Offline'})`, type: 'info' }]
     }))
 
     if (isConnected) {
       // Online mode: Optimistic UI update + backend scenario dispatch
-      set((state) => {
+      set((state: FarmState) => {
         const cv = state.cvData || baseCv
         const currentSensors = state.sensors || demoSensors
         return {
@@ -703,7 +704,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
           toasts: [...state.toasts, { id: createId(), message: `Alert: Low ${capName} levels detected!`, type: 'error' }]
         }
       })
-      fetch(`http://localhost:8000/api/demo/scenario?type=${type}_depletion`, {
+      fetch(`/api/demo/scenario?type=${type}_depletion`, {
         method: 'POST'
       }).then(res => {
         console.log("Nutrient Depletion POST result status:", res.status);
@@ -715,7 +716,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
 
     // Offline mode: High-fidelity step-by-step local simulation
     // Stage 1: Depletion detected (veges turn yellow)
-    set((state) => {
+    set((state: FarmState) => {
       const cv = state.cvData || baseCv
       const currentSensors = state.sensors || demoSensors
       return {
@@ -736,7 +737,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
 
     // Stage 2: After 3 seconds, turn pump on and show toast
     setTimeout(() => {
-      set((state) => {
+      set((state: FarmState) => {
         const currentActuators = state.actuators || demoActuators
         const solutionText = type === 'nitrogen' ? 'N' : capName
         return {
@@ -750,7 +751,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
       let currentStep = 0
       const interval = setInterval(() => {
         currentStep++
-        set((state) => {
+        set((state: FarmState) => {
           const currentSensors = state.sensors || demoSensors
           const val = Number((startVal + (targetVal - startVal) * (currentStep / steps)).toFixed(1))
           return {
@@ -761,7 +762,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
         if (currentStep >= steps) {
           clearInterval(interval)
           // Stage 4: Stabilize (veges back to green)
-          set((state) => {
+          set((state: FarmState) => {
             const currentActuators = state.actuators || demoActuators
             const currentCv = state.cvData || baseCv
             const updatedDeficiencies = { ...currentCv.nutrient_deficiencies }
@@ -780,7 +781,7 @@ export const useFarmStore = create<FarmState>((setActual, get) => {
     }, 3000)
   },
 
-  triggerNutrientFix: (type = 'nitrogen') => {
+  triggerNutrientFix: () => {
     // Handled completely by the automatic depletion simulation
   }
 }

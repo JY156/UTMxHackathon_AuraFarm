@@ -1,7 +1,7 @@
 import { motion, useMotionValueEvent, useSpring } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { Thermometer, Droplets, Waves, FlaskConical, TrendingUp, TrendingDown, Database, Camera } from 'lucide-react'
+import { Thermometer, Droplets, Waves, FlaskConical } from 'lucide-react'
 import { useFarmStore } from '../../../store/useFarmStore'
 
 function AnimatedNumber({ value, precision = 1 }: { value: number; precision?: number }) {

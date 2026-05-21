@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -10,7 +10,7 @@ export function SensorNode({ isAlert, ...props }: any) {
     if (ledRef.current) {
       const speed = isAlert ? 8 : 2;
       const pulse = (Math.sin(state.clock.elapsedTime * speed) + 1) / 2
-      ledRef.current.material.opacity = 0.2 + pulse * 0.8
+      ;(ledRef.current.material as any).opacity = 0.2 + pulse * 0.8
     }
   })
 

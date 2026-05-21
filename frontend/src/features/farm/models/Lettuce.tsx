@@ -1,8 +1,7 @@
-import type { ComponentProps } from 'react'
 import { useGLTF, useTexture } from '@react-three/drei'
 
 export function Lettuce(
-  props: ComponentProps<'group'> & {
+  props: any & {
     isDiseased?: boolean
     growthStage?: 'seedling' | 'vegetative' | 'harvest'
     nutrientDeficiency?: 'nitrogen' | 'phosphorus' | 'potassium' | null

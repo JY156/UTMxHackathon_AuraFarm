@@ -23,9 +23,11 @@ function ActuatorStatus() {
 
   const isFanBroken = alerts.some((a) => a.type === 'mechanical_failure' && !a.resolved);
 
+  const activeActuators = actuators || { fan: false, pump: false, mist: false, led: 'off' as LedMode }
+
   const controls = [
     { 
-      id: 'fan', label: 'Ventilation', active: actuators.fan, icon: Wind, 
+      id: 'fan', label: 'Ventilation', active: activeActuators.fan, icon: Wind, 
       colorStyle: {
         logo: 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20',
         card: 'border-emerald-500/40 bg-emerald-500/10',
@@ -33,7 +35,7 @@ function ActuatorStatus() {
       }
     },
     { 
-      id: 'pump', label: 'Irrigation', active: actuators.pump, icon: Droplets,
+      id: 'pump', label: 'Irrigation', active: activeActuators.pump, icon: Droplets,
       colorStyle: {
         logo: 'bg-cyan-500/10 text-cyan-400 ring-1 ring-cyan-500/20',
         card: 'border-cyan-500/40 bg-cyan-500/10',
@@ -41,7 +43,7 @@ function ActuatorStatus() {
       }
     },
     { 
-      id: 'mist', label: 'Misting System', active: actuators.mist, icon: CloudFog,
+      id: 'mist', label: 'Misting System', active: activeActuators.mist, icon: CloudFog,
       colorStyle: {
         logo: 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20',
         card: 'border-blue-500/40 bg-blue-500/10',
@@ -49,7 +51,7 @@ function ActuatorStatus() {
       }
     },
     { 
-      id: 'led', label: 'Growth LED', active: actuators.led !== 'off', icon: Lightbulb, mode: actuators.led,
+      id: 'led', label: 'Growth LED', active: activeActuators.led !== 'off', icon: Lightbulb, mode: activeActuators.led,
       colorStyle: {
         logo: 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20',
         card: 'border-amber-500/40 bg-amber-500/10',
@@ -59,6 +61,7 @@ function ActuatorStatus() {
   ]
 
   const handleToggle = (id: string) => {
+    if (!actuators) return
     if (id === 'led') {
       const modes: LedMode[] = ['off', 'full', 'purple']
       const currentIndex = modes.indexOf(actuators.led)
